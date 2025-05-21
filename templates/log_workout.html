@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block content %}
+
+    <h2>Log Workout</h2>
+
+    <form method="POST" action="/log_workout">
+        <label for="date">Date:</label><br>
+        <input type="date" id="date" name="date" value="{{ current_date }}" required><br><br>
+
+        <label for="exercise">Exercise:</label><br>
+        <input type="text" name="exercise" id="exercise" readonly required>
+        <button type="button" onclick="openModal()">Choose Exercise</button><br><br>
+
+        <label for="sets">Sets:</label><br>
+        <input type="number" id="sets" name="sets" required><br><br>
+
+        <label for="reps">Reps:</label><br>
+        <input type="number" id="reps" name="reps" required><br><br>
+
+        <label for="weight">Weight (kg):</label><br>
+        <input type="number" id="weight" name="weight" required><br><br>
+
+        <label for="notes">Notes:</label><br>
+        <textarea id="notes" name="notes" rows="3" cols="40" required></textarea><br><br>
+
+        <input type="submit" value="Log Workout">
+    </form>
+
+    <!-- Modal design -->
+     <div id="exerciseModal" class="modal" style=" display:none;">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h3>Select Exercise</h3>
+
+            <input type="text" id="searchInput" onkeyup="filterExercises()" placeholder="Search exercises">
+
+            <select id="muscleFilter" onchange="filterExercises()">
+                <option value="">All Muscle Groups</option>
+                <option value="Chest">Chest</option>
+                <option value="Back">Back</option>
+                <option value="Arms">Arms</option>
+                <option value="Legs">Legs</option>
+                <option value="Shoulders">Shoulders</option>
+            </select>
+
+            <div id="exerciseList" class="exercise-grid">
+                {% for ex in exercise %}
+                <div class="exercise-card" data-muscle="{{ ex[1] }}" onclick="selectExercise('{{ ex[0] }}')">
+                    <strong>{{ ex[0] }}</strong>
+                    <small>{{ ex[1] }}</small>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+     </div>
+
+
+     <script>
+        function openModal(){
+            document.getElementById("exerciseModal").style.display = "block";
+        }
+
+        function closeModal(){
+            document.getElementById("exerciseModal").style.display = "none";
+        }
+
+        function selectExercise(name){
+            document.getElementById("exercise").value = name;
+            closeModal();
+        }
+
+        function filterExercises(){
+            const input = document.getElementById("searchInput").value.toLowerCase();
+            const filter = document.getElementById("muscleFilter").value.toLowerCase();
+            const list = document.querySelectorAll(".exercise-card");
+
+            list.forEach(card => {
+                const text = card.textContent.toLowerCase();
+                const muscle = card.getAttribute("data-muscle").toLowerCase();
+
+                const matchesText = text.includes(input) || input === "";
+                const matchesMuscle = muscle === filter || filter === "";
+
+                if (matchesText && matchesMuscle) {
+                    card.style.display = "";
+                } else {
+                    card.style.display = "none";
+                }
+                    
+            });
+        }
+     </script>
+
+{% endblock %}

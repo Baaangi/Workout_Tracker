@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block content %}
+
+    <h2>Welcome, {{ username }}</h2>
+    <p>This is your dashboard. Your workouts will show here.</p>
+    <a href="/logout">Logout</a><br><br>
+
+    <div class="summary-cards">
+        <div>Total Workouts: {{ summary[0] or 0 }}</div>
+        <div>Total Weight Lifted: {{ summary[1] or 0 }} kg</div>
+        <div>Last Workout: {{ summary[2] or 'N/A' }}</div>
+    </div>
+
+    <h3>Recent Workouts</h3>
+    <table>
+        <tr>
+            <th>Date</th>
+            <th>Exercise</th>
+            <th>Sets</th>
+            <th>Reps</th>
+            <th>Weight</th>
+        </tr>
+        {% for w in recent_workouts %}
+        <tr>
+            <td>{{ w[0] }}</td>
+            <td>{{ w[1] }}</td>
+            <td>{{ w[2] }}</td>
+            <td>{{ w[3] }}</td>
+            <td>{{ w[4] }} kg</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+{% endblock %}
