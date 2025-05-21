@@ -34,14 +34,18 @@ def init_db():
     ''')
 
     c.execute('''
-        CREATE TABLE IF NOT EXISTS workouts(
+        CREATE TABLE IF NOT EXISTS workouts (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER,
             date TEXT NOT NULL,
             exercise TEXT NOT NULL,
-            sets INTEGER NOT NULL,
+            set_number INTEGER NOT NULL,
             reps INTEGER NOT NULL,
             weight REAL,
-            notes TEXT)''')
+            notes TEXT,
+            FOREIGN KEY (user_id) REFERENCES users(id)
+        )
+    ''')
     conn.commit()
     conn.close()
 
@@ -84,6 +88,7 @@ def login():
 
         if user and check_password_hash(user[2], password):
             session['user'] = user[1]
+            session['user_id'] = user[0]
             return redirect('/dashboard')
         else:
             flash("Invalid credentials", "error")
@@ -95,11 +100,12 @@ def dashboard():
     if 'user' not in session:
         return redirect('/login')
 
+
     """ summary card """
     conn = sqlite3.connect('workout_tracker.db')
     c = conn.cursor()
 
-    c.execute('''SELECT date, exercise, sets, reps, weight FROM workouts
+    c.execute('''SELECT date, exercise, set_number, reps, weight FROM workouts
                 ORDER BY date DESC LIMIT 5''')
     recent_workouts = c.fetchall()
 
@@ -121,31 +127,36 @@ def log_workout():
         return redirect('/login')
 
     if request.method == 'POST':
-        date_val = request.form.get('date') or datetime.today().strftime('%Y-%m-%d')
-        exercise = request.form['exercise']
-        sets = request.form['sets']
-        reps = request.form['reps']
-        weight = request.form['weight']
-        notes = request.form['notes']
+        data = request.get_json()
+        user_id = session['user_id']
+        date = data.get('date', datetime.now().strftime("%Y-%m-%d"))
+        entries = data.get('entries', [])
 
         conn = sqlite3.connect('workout_tracker.db')
         c = conn.cursor()
-        c.execute('''INSERT INTO workouts (date, exercise, sets, reps, weight, notes) VALUES (?, ?, ?, ?, ?, ?)''', 
-                  (date_val, exercise, sets, reps, weight, notes))
-        conn.commit()
-        conn.close()
-        flash('Workout logged succesfully', 'success')
-        return redirect(url_for('log_workout'))
-    
+        try:
+            for entry in entries:
+                exercise = entry['exercise']
+                for idx, s in enumerate(entry['sets']):
+                    c.execute('''INSERT INTO workouts (user_id, date, exercise, set_number, reps, weight, notes)
+                            VALUES (?, ?, ?, ?, ?, ?, ?)''',
+                            (user_id, date, exercise, idx + 1, s['reps'], s['weight'], s.get('notes','')))
+            conn.commit()
+            return jsonify({'success': True})
+        except Exception as e:
+            print("Error loggin workout:", e)
+            return jsonify({'success': False, 'error': str(e)})
+        finally:
+            conn.close()
+
     conn = sqlite3.connect('workout_tracker.db')
     c = conn.cursor()
-    c.execute('SELECT name, target_muscle_group, equipment FROM exercises ORDER BY name')
+    c.execute("SELECT name, target_muscle_group FROM exercises")
     exercises = c.fetchall()
     conn.close()
 
-    current_date = date.today().isoformat()
+    return render_template('log_workout.html', exercise=exercises, current_date=datetime.now().strftime("%Y-%m-%d"))
 
-    return render_template('log_workout.html', exercise=exercises, current_date=current_date)
     
 
 if __name__ == '__main__':

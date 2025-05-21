@@ -3,28 +3,18 @@
 
     <h2>Log Workout</h2>
 
-    <form method="POST" action="/log_workout">
         <label for="date">Date:</label><br>
         <input type="date" id="date" name="date" value="{{ current_date }}" required><br><br>
 
-        <label for="exercise">Exercise:</label><br>
-        <input type="text" name="exercise" id="exercise" readonly required>
-        <button type="button" onclick="openModal()">Choose Exercise</button><br><br>
+        <button type="button" onclick="openModal()">Add Exercise</button><br><br>
 
-        <label for="sets">Sets:</label><br>
-        <input type="number" id="sets" name="sets" required><br><br>
+        <div id="setsContainer" style="margin-top: 15px;"></div>
+    
 
-        <label for="reps">Reps:</label><br>
-        <input type="number" id="reps" name="reps" required><br><br>
+        <div id="workout-entries"></div>
 
-        <label for="weight">Weight (kg):</label><br>
-        <input type="number" id="weight" name="weight" required><br><br>
+        <button type="button" id="saveWorkoutBtn">Save Workout</button>
 
-        <label for="notes">Notes:</label><br>
-        <textarea id="notes" name="notes" rows="3" cols="40" required></textarea><br><br>
-
-        <input type="submit" value="Log Workout">
-    </form>
 
     <!-- Modal design -->
      <div id="exerciseModal" class="modal" style=" display:none;">
@@ -64,11 +54,6 @@
             document.getElementById("exerciseModal").style.display = "none";
         }
 
-        function selectExercise(name){
-            document.getElementById("exercise").value = name;
-            closeModal();
-        }
-
         function filterExercises(){
             const input = document.getElementById("searchInput").value.toLowerCase();
             const filter = document.getElementById("muscleFilter").value.toLowerCase();
@@ -80,15 +65,132 @@
 
                 const matchesText = text.includes(input) || input === "";
                 const matchesMuscle = muscle === filter || filter === "";
-
-                if (matchesText && matchesMuscle) {
-                    card.style.display = "";
-                } else {
-                    card.style.display = "none";
-                }
-                    
+                
+                card.style.display = (matchesText && matchesMuscle) ? "" : "none";
             });
         }
+        
+        function selectExercise(name){
+            closeModal();
+
+            if (document.querySelector(`[data-exercise="${name}"]`)) {
+                alert("Exercise already added");
+                return;
+            }
+
+            const container = document.getElementById("workout-entries");
+
+            const exerciseDiv = document.createElement("div");
+            exerciseDiv.setAttribute("data-exercise", name);
+            exerciseDiv.style.border = "1px solid #ccc";
+            exerciseDiv.style.padding = "10px";
+            exerciseDiv.style.marginBottom = "10px"
+
+            exerciseDiv.innerHTML = `
+                <h4>${name} <button type="button" onclick="removeExercise(this)">Remove</button></h4>
+                <div class="sets"></div>
+                <button type="button" onclick="addSet(this)">Add Set</button>
+            `;
+
+            container.appendChild(exerciseDiv);
+
+            addSet(exerciseDiv.querySelector(".sets")); 
+        }
+
+        function removeExercise(button) {
+            button.parentElement.parentElement.remove();
+        }
+
+        function addSet(buttonOrContainer) {
+
+            let setsDiv;
+            if (buttonOrContainer.classList.contains("sets")) {
+            setsDiv = buttonOrContainer;
+            } else {
+            setsDiv = buttonOrContainer.previousElementSibling;
+            }
+
+            const setCount = setsDiv.children.length + 1;
+
+            const setDiv = document.createElement("div");
+            setDiv.style.marginBottom = "5px";
+
+            setDiv.innerHTML = `
+                <label>Set ${setCount}:</label>
+                Reps: <input type="number" class="reps" min="1" required style="width:50px;">
+                Weight (kg): <input type="number" class="weight" min="0" step="0.1" style="width:70px;">
+                Notes: <input type="text" class="notes" style="width:150px;">
+                <button type="button" onclick="removeSet(this)">Remove</button>
+            `;
+
+            setsDiv.appendChild(setDiv);
+        }
+
+        function removeSet(button) {
+            const setDiv = button.parentElement;
+            const setsDiv = setDiv.parentElement;
+            setDiv.remove();
+
+            // Re-label remaining sets
+            [...setsDiv.children].forEach((setEl, i) => {
+            setEl.querySelector("label").textContent = `Set ${i + 1}:`;
+            });
+        }
+
+        // On Save Workout button click, gather data and POST JSON
+        document.getElementById("saveWorkoutBtn").addEventListener("click", () => {
+            const date = document.getElementById("date").value;
+            if (!date) {
+            alert("Please select a date");
+            return;
+            }
+
+            const entries = [];
+            document.querySelectorAll("[data-exercise]").forEach(exDiv => {
+            const exercise = exDiv.getAttribute("data-exercise");
+            const sets = [];
+            exDiv.querySelectorAll(".sets > div").forEach(setDiv => {
+                const reps = setDiv.querySelector(".reps").value;
+                const weight = setDiv.querySelector(".weight").value;
+                const notes = setDiv.querySelector(".notes").value;
+
+                if (!reps) return;
+
+                sets.push({
+                reps: parseInt(reps),
+                weight: weight ? parseFloat(weight) : 0,
+                notes: notes || ""
+                });
+            });
+
+            if (sets.length) {
+                entries.push({ exercise, sets });
+            }
+            });
+
+            if (entries.length === 0) {
+            alert("Add at least one set");
+            return;
+            }
+
+            fetch("/log_workout", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ date, entries }),
+            })
+            .then(res => res.json())
+            .then(data => {
+            if (data.success) {
+                alert("Workout logged successfully!");
+                // Optionally clear the form
+                document.getElementById("workout-entries").innerHTML = "";
+            } else {
+                alert("Failed to log workout");
+            }
+            })
+            .catch(err => alert("Error: " + err));
+        });
+
      </script>
 
 {% endblock %}
