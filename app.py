@@ -1,5 +1,5 @@
 #userlogin
-from flask import Flask, render_template, request, redirect, session, url_for, flash
+from flask import Flask, render_template, request, redirect, session, url_for, flash, jsonify
 import sqlite3
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -100,26 +100,38 @@ def dashboard():
     if 'user' not in session:
         return redirect('/login')
 
-
     """ summary card """
+    username = session['user']
+    user_id = session['user_id']
     conn = sqlite3.connect('workout_tracker.db')
     c = conn.cursor()
 
-    c.execute('''SELECT date, exercise, set_number, reps, weight FROM workouts
-                ORDER BY date DESC LIMIT 5''')
-    recent_workouts = c.fetchall()
-
-    c.execute('''SELECT COUNT(*), SUM(weight), MAX(date) FROM workouts''')
+    c.execute('''SELECT COUNT(DISTINCT date), COALESCE (SUM(weight), 0), MAX(date)
+              FROM workouts WHERE user_id = ?''', (user_id,))
     summary = c.fetchone()
+
+    c.execute('''SELECT DISTINCT date FROM workouts 
+              WHERE user_id = ? ORDER BY date DESC LIMIT 5''', (user_id,))
+    recent_dates = [row[0] for row in c.fetchall()]
+
+    recent_workouts = {}
+    for date in recent_dates:
+        c.execute('''SELECT exercise, set_number, reps, weight 
+                  FROM workouts
+                  WHERE user_id = ? AND date = ?
+                  ORDER BY exercise, set_number''', (user_id, date))
+        recent_workouts[date] = c.fetchall()
 
     conn.close()
 
-    return render_template('dashboard.html', username=session['user'], recent_workouts=recent_workouts, summary=summary)
+    return render_template('dashboard.html', username=username, recent_workouts=recent_workouts, summary=summary)
+
 
 @app.route('/logout')
 def logout():
     session.pop('user', None)
     return redirect('/login')
+
 
 @app.route('/log_workout', methods=['GET', 'POST'])
 def log_workout():
@@ -157,7 +169,33 @@ def log_workout():
 
     return render_template('log_workout.html', exercise=exercises, current_date=datetime.now().strftime("%Y-%m-%d"))
 
+
+@app.route('/history')
+def history():
+    if 'user' not in session:
+        return redirect('/login')
     
+    user_id = session['user_id']
+
+    conn = sqlite3.connect('workout_tracker.db')
+    c = conn.cursor()
+
+    c.execute('''SELECT DISTINCT date FROM workouts
+              WHERE user_id = ? ORDER BY date DESC''', (user_id,))
+    dates = [row[0] for row  in c.fetchall()]
+
+    all_workouts = {}
+    for date in dates:
+        c.execute('''SELECT exercise, set_number, reps, weight
+                  FROM workouts
+                  WHERE user_id = ? AND date = ?
+                  ORDER BY exercise, set_number''', (user_id, date))
+        all_workouts[date] = c.fetchall()
+
+    conn.close()
+
+    return render_template('history.html', all_workouts=all_workouts)
+
 
 if __name__ == '__main__':
     init_db()

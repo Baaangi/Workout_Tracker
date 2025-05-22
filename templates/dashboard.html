@@ -12,23 +12,28 @@
     </div>
 
     <h3>Recent Workouts</h3>
-    <table>
-        <tr>
-            <th>Date</th>
-            <th>Exercise</th>
-            <th>Sets</th>
-            <th>Reps</th>
-            <th>Weight</th>
-        </tr>
-        {% for w in recent_workouts %}
-        <tr>
-            <td>{{ w[0] }}</td>
-            <td>{{ w[1] }}</td>
-            <td>{{ w[2] }}</td>
-            <td>{{ w[3] }}</td>
-            <td>{{ w[4] }} kg</td>
-        </tr>
-        {% endfor %}
-    </table>
+
+    {% for date, workouts in recent_workouts.items() %}
+        <h4>{{ date }}</h4>
+        <table>
+            <tr>
+                <th>Exercise</th>
+                <th>Set</th>
+                <th>Reps</th>
+                <th>Weight (kg)</th>
+            </tr>
+            {% for ex in workouts %}
+            <tr>
+                <td>{{ ex[0] }}</td>
+                <td>{{ ex[1] }}</td>
+                <td>{{ ex[2] }}</td>
+                <td>{{ ex[3] }} kg</td>
+            </tr>
+            {% endfor %}
+        </table>
+        <br>
+    {% else %}
+        <p>No recent workouts. Start training!</p>
+    {% endfor %}
 
 {% endblock %}

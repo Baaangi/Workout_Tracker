@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block content %}
+
+    <h2>Workout History</h2><br><br>
+
+    {% if all_workouts %}
+        {% for date, exercise in all_workouts.items() %}
+            <h4>{{ date }}</h4>
+            <table border="1" cellpadding="5" cellspacing="0">
+                <thead>
+                    <tr>
+                        <th>Exercise</th>
+                        <th>Set</th>
+                        <th>Reps</th>
+                        <th>Weight</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for ex in exercise %}
+                    <tr>
+                        <td>{{ ex[0] }}</td>
+                        <td>{{ ex[1] }}</td>
+                        <td>{{ ex[2] }}</td>
+                        <td>{{ ex[3] }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% endfor %}
+    {% else %}
+            <p>No workouts logget yet. Start Training</p>
+    {% endif %}
+
+{% endblock %}
