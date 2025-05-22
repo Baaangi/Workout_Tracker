@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block content %}
+
+    <h2>Workout Analytics</h2>
+
+    <div id="volumeChart"></div>
+    <div id="freqChart"></div>
+
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script>
+        var volumeData = [{
+            x: {{ dates|tojson }},
+            y: {{ volumes|tojson }},
+            type: 'scatter',
+            mode: 'lines+markers',
+            name: 'Total Volume'
+        }];
+        Plotly.newPlot('volumeChart', volumeData, {title: 'Total Volume Per Day'});
+
+        var freqData = [{
+            x: {{ dates|tojson }},
+            y: {{ volumes|tojson }},
+            type: 'bar',
+            name: 'Exercise Frequency'
+        }];
+        Plotly.newPlot('freqChart', freqData, {title: 'Exercise Frequency'});
+    </script>
+
+{% endblock %}

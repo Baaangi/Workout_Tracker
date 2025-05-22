@@ -8,6 +8,9 @@ import os
 import csv
 from datetime import datetime, date
 
+#analytics
+
+
 app = Flask(__name__)
 app.secret_key = 'mysecrekey'
 
@@ -195,6 +198,43 @@ def history():
     conn.close()
 
     return render_template('history.html', all_workouts=all_workouts)
+
+
+@app.route('/analytics')
+def analytics():
+    if 'user' not in session:
+        return redirect('/login')
+    
+    user_id = session['user_id']
+    conn = sqlite3.connect('workout_tracker.db')
+    c = conn.cursor()
+
+    c.execute('''
+        SELECT date, SUM(reps * weight)
+        FROM workouts
+        WHERE user_id = ?
+        GROUP BY date
+        ORDER BY date
+        ''', (user_id,))
+    volume_data = c.fetchall()
+
+    c.execute('''
+        SELECT exercise, COUNT(*) FROM workouts
+        WHERE user_id = ?
+        GROUP BY exercise
+        ''', (user_id,))
+    freq_data = c.fetchall()
+
+    conn.close()
+
+    dates = [row[0] for row in volume_data]
+    volumes = [row[1] for row in volume_data]
+
+    exercises = [row[0] for row in freq_data]
+    counts = [row[1] for row in freq_data]
+
+    return render_template('analytics.html', dates=dates, volumes=volumes, exercises=exercises, counts=counts)
+
 
 
 if __name__ == '__main__':
