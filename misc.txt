@@ -1,3 +1,4 @@
 insert into exercises:
 
     INSERT INTO exercises (name, target_muscle_group, equipment) VALUES ('Hammer Curl', 'Bicep', 'Dumbbell');
+hmm.
