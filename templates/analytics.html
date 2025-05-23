@@ -56,7 +56,7 @@
             type: 'bar',
             marker: {color: 'orange'}
         }];
-        Plotly.newPlot('setsChart', freqData, {title: 'Total Sets Per Workout',
+        Plotly.newPlot('setsChart', freqData, {
             xaxis: { title: 'Date', type: 'category'},
             yaxis: { title: 'Number of Sets'}
         });
@@ -69,7 +69,7 @@
             mode: 'lines+markers',
             name: 'Top Set Weight'
         }];
-        Plotly.newPlot('progressionChart', progData, {title: 'Progression of ' + "{{ selected_exercise }}",
+        Plotly.newPlot('progressionChart', progData, {
             xaxis: {
                 title: 'Date',
                 type: 'category'
