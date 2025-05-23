@@ -103,7 +103,7 @@ def dashboard():
     if 'user' not in session:
         return redirect('/login')
 
-    """ summary card """
+    #Summary card
     username = session['user']
     user_id = session['user_id']
     conn = sqlite3.connect('workout_tracker.db')
@@ -200,40 +200,74 @@ def history():
     return render_template('history.html', all_workouts=all_workouts)
 
 
-@app.route('/analytics')
+@app.route('/analytics', methods=['GET', 'POST'])
 def analytics():
     if 'user' not in session:
         return redirect('/login')
     
     user_id = session['user_id']
+
+    if request.method == "POST":
+        exercise_filter = request.form.get('exercise','')
+        start_date = request.form.get('start-date', '2025-01-01')
+        end_date = request.form.get('end-date', datetime.now().strftime("%Y-%m-%d"))
+    else:
+        exercise_filter = request.args.get('exercise','')
+        start_date = request.args.get('start-date', '2025-01-01')
+        end_date = request.args.get('end-date', datetime.now().strftime("%Y-%m-%d"))
+
     conn = sqlite3.connect('workout_tracker.db')
     c = conn.cursor()
 
+    #sets per workout
     c.execute('''
-        SELECT date, SUM(reps * weight)
+        SELECT date, COUNT(*) as freq
         FROM workouts
         WHERE user_id = ?
         GROUP BY date
         ORDER BY date
         ''', (user_id,))
-    volume_data = c.fetchall()
-
-    c.execute('''
-        SELECT exercise, COUNT(*) FROM workouts
-        WHERE user_id = ?
-        GROUP BY exercise
-        ''', (user_id,))
     freq_data = c.fetchall()
 
-    conn.close()
+    #progression_chart
+    progression = []
+    if exercise_filter:
+        c.execute('''
+            SELECT date, MAX(weight)
+            FROM workouts
+            WHERE user_id = ? AND exercise = ? AND date BETWEEN ? AND ?
+            GROUP BY date
+            ORDER BY date
+            ''', (user_id, exercise_filter, start_date, end_date))
+    progression = c.fetchall()
 
-    dates = [row[0] for row in volume_data]
-    volumes = [row[1] for row in volume_data]
+    c.execute('''
+        SELECT DISTINCT exercise FROM workouts WHERE user_id = ? ORDER BY exercise
+        ''', (user_id,))
+    exercises = c.fetchall()
 
-    exercises = [row[0] for row in freq_data]
-    counts = [row[1] for row in freq_data]
+    
 
-    return render_template('analytics.html', dates=dates, volumes=volumes, exercises=exercises, counts=counts)
+    sets_dates = [row[0] for row in freq_data]
+    sets_counts = [row[1] for row in freq_data]
+
+    prog_dates = [row[0] for row in progression]
+    prog_weights = [row[1] for row in progression]
+
+    #lifetime_workouts
+    c.execute('''
+        SELECT COUNT(DISTINCT date), SUM(reps * weight)
+        FROM workouts
+        WHERE user_id = ?
+        ''', (user_id,))
+    result = c.fetchone()
+    total_days = result[0] or 0
+    total_weight = round(result[1] or 0, 2)
+
+    conn.close()    
+
+    return render_template('analytics.html',total_days=total_days, total_weight=total_weight, exercises=exercises, sets_dates=sets_dates, sets_counts=sets_counts, prog_dates=prog_dates, prog_weights=prog_weights, selected_exercise=exercise_filter, start_date=start_date, end_date=end_date) 
+                           
 
 
 

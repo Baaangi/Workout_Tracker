@@ -1,29 +1,84 @@
 {% extends "base.html" %}
 {% block content %}
 
-    <h2>Workout Analytics</h2>
+    <h1>Workout Analytics</h1>
 
-    <div id="volumeChart"></div>
-    <div id="freqChart"></div>
+    <!-- lifetime workout stats -->
+    <h2>Lifetime Workouts</h2>
+    <div class="card">
+        <h4>Total Workout Days:</h4>
+        <p>{{ total_days }}</p>
+    </div>
+
+    <div class="card">
+        <h4>Total Weight Lifted:</h4>
+        <p>{{ total_weight }} kg</p>
+    </div>
 
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+
+    <!-- progression_chart_form -->
+    <h2>Progression Chart</h2>
+    <form method="POST">
+        <label for="start_date">Start Date:
+            <input type="date" name="start_date" value="{{ start_date }}">
+        </label>
+        <label for="end_date">End Date:
+            <input type="date" name="end_date" value="{{ end_date }}">
+        </label>
+        <label for="exercise">Filter by Exercise
+            <select name="exercise">
+                <option value="">ALL</option>
+                {% for ex in exercises %}
+                <option value="{{ ex[0] }}" {% if ex[0] == selected_exercise %}selected{% endif %}>{{ ex[0] }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        <button type="submit">Apply</button>    
+    </form>
+
+    <!-- progression_chart_render -->
+    {% if selected_exercise %}
+        <h3>Progression for {{ selected_exercise }}</h3>
+        <div id="progressionChart"></div>
+    {% endif %}
+
+    <!-- exercise_freq_chart_render -->
+    <h2>Sets Per Workout</h2>
+    <div id="setsChart"></div>
+
+
+    <!-- js logic for rendering charts -->
     <script>
-        var volumeData = [{
-            x: {{ dates|tojson }},
-            y: {{ volumes|tojson }},
+         var freqData = [{
+            x: {{ sets_dates | tojson }},
+            y: {{ sets_counts | tojson }},
+            type: 'bar',
+            marker: {color: 'orange'}
+        }];
+        Plotly.newPlot('setsChart', freqData, {title: 'Total Sets Per Workout',
+            xaxis: { title: 'Date', type: 'category'},
+            yaxis: { title: 'Number of Sets'}
+        });
+
+        {% if selected_exercise %}
+            var progData = [{
+            x: {{ prog_dates | tojson }},
+            y: {{ prog_weights | tojson }},
             type: 'scatter',
             mode: 'lines+markers',
-            name: 'Total Volume'
+            name: 'Top Set Weight'
         }];
-        Plotly.newPlot('volumeChart', volumeData, {title: 'Total Volume Per Day'});
-
-        var freqData = [{
-            x: {{ dates|tojson }},
-            y: {{ volumes|tojson }},
-            type: 'bar',
-            name: 'Exercise Frequency'
-        }];
-        Plotly.newPlot('freqChart', freqData, {title: 'Exercise Frequency'});
+        Plotly.newPlot('progressionChart', progData, {title: 'Progression of ' + "{{ selected_exercise }}",
+            xaxis: {
+                title: 'Date',
+                type: 'category'
+            },
+            yaxis:{
+                title: 'Weight (kg)'
+            }
+        });
+        {% endif %}
     </script>
 
 {% endblock %}
