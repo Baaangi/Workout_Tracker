@@ -1,39 +1,67 @@
 {% extends "base.html" %}
 {% block content %}
 
-    <h2>Welcome, {{ username }}</h2>
-    <p>This is your dashboard. Your workouts will show here.</p>
-    <a href="/logout">Logout</a><br><br>
+    <div class="container my-5">
+        <h2 class="mb-3" style="font-family: 'Helvetica', sans-serif;">Welcome, {{ username }}</h2>
+        <p class="text-muted">Your dashboard.</p>
 
-    <div class="summary-cards">
-        <div>Total Workouts: {{ summary[0] or 0 }}</div>
-        <div>Total Weight Lifted: {{ summary[1] or 0 }} kg</div>
-        <div>Last Workout: {{ summary[2] or 'N/A' }}</div>
-    </div>
+        <div class="row mb-5">
+            <div class="col-md-4">
+                <div class="card bg-dark text-white border-0 shadow rounded-4">
+                    <div class="card-body text-center">
+                        <h5>Total Workouts</h5>
+                        <p class="display-6">{{ summary[0] or 0 }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card bg-dark text-white border-0 shadow rounded-4">
+                    <div class="card-body text-center">
+                        <h5>Total Weight Lifted</h5>
+                        <p class="display-6">{{ summary[1] or 0 }} kg</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card bg-dark text-white border-0 shadow rounded-4">
+                    <div class="card-body text-center">
+                        <h5>Last Workout</h5>
+                        <p class="display-6">{{ summary[2] or 'N/A' }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-    <h3>Recent Workouts</h3>
+        <h3 class="mt-5 mb-3" style="font-family: 'Helvetica', sans-serif;"> Recent Workouts</h3>
 
-    {% for date, workouts in recent_workouts.items() %}
-        <h4>{{ date }}</h4>
-        <table>
-            <tr>
-                <th>Exercise</th>
-                <th>Set</th>
-                <th>Reps</th>
-                <th>Weight (kg)</th>
-            </tr>
-            {% for ex in workouts %}
-            <tr>
-                <td>{{ ex[0] }}</td>
-                <td>{{ ex[1] }}</td>
-                <td>{{ ex[2] }}</td>
-                <td>{{ ex[3] }} kg</td>
-            </tr>
+        {% if recent_workouts %}
+            {% for date, workouts in recent_workouts.items() %}
+                <h5 class="text-warning mt-4">{{ date }}</h5>
+                <div class="table-responsive">
+                    <table class="table table-dark table-bordered table-hover">
+                        <thead class="table-lgith text-dark">
+                            <tr>
+                                <th>Exercise</th>
+                                <th>Set</th>
+                                <th>Reps</th>
+                                <th>Weight (kg)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for ex in workouts %}
+                            <tr>
+                                <td>{{ ex[0] }}</td>
+                                <td>{{ ex[1] }}</td>
+                                <td>{{ ex[2] }}</td>
+                                <td>{{ ex[3] }} kg</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             {% endfor %}
-        </table>
-        <br>
-    {% else %}
-        <p>No recent workouts. Start training!</p>
-    {% endfor %}
-
+        {% else %}
+        <p claass="text-muted">No recent workuts.Start Training!</p>
+        {% endif %}
+    </div>
 {% endblock %}

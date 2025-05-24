@@ -1,8 +1,22 @@
+{% extends "base.html" %}
+{% block content %}
 
-<form method="post">
-    <h2>Login</h2>
-    <input type="text" name="username" placeholder="Username" required><br>
-    <input type="text" name="password" placeholder="Password" required><br>
-    <input type="submit" value="Login">
-    <p>Don't have an account? <a href="/register">Register Here</a></p>
-</form>
+<div class="d-flex justify-content-center align-items-center" style="min-height: 90vh;">
+    <div class="form-container">
+        <h3 class="text-center mb-4">LOGIN</h3>
+        <form method="post">
+            <div class="mb-3">
+                <label for="username" class="form-label">Username:</label>
+                <input type="text" class="form-control" name="username" placeholder="Enter username" required><br>
+            </div>
+            <div class="mb-3">
+                <label for="password" class="form-label" >Password:</label><br>
+                <input type="text" class="form-control" name="password" placeholder="Enter Password" required><br>
+            </div>
+            <button type="submit" class="btn btn-primary w-100">Login</button>
+        </form>
+        <p class="text-center mt-3 text-muted">Don't have an account? <a href="/register">Register Here</a></p>
+    </div>
+</div>
+
+{% endblock %}
