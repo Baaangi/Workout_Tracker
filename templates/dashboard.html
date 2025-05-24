@@ -3,65 +3,66 @@
 
     <div class="container my-5">
         <h2 class="mb-3" style="font-family: 'Helvetica', sans-serif;">Welcome, {{ username }}</h2>
-        <p class="text-muted">Your dashboard.</p>
+        <p class="text-muted">This is Your dashboard.</p>
 
-        <div class="row mb-5">
-            <div class="col-md-4">
-                <div class="card bg-dark text-white border-0 shadow rounded-4">
+        <div class="row mb-5" g-3>
+            <div class="col-md-4 col-sm-12">
+                <div class="card bg-dark text-white border-0 shadow rounded-4 h-100">
                     <div class="card-body text-center">
-                        <h5>Total Workouts</h5>
-                        <p class="display-6">{{ summary[0] or 0 }}</p>
+                        <h5 class="card-title" style="color: var(--primary);">Total Workouts</h5>
+                        <p class="card-text fs-4">{{ summary[0] or 0 }}</p>
                     </div>
                 </div>
             </div>
-            <div class="col-md-4">
-                <div class="card bg-dark text-white border-0 shadow rounded-4">
+            <div class="col-md-4 col-sm-12">
+                <div class="card bg-dark text-white border-0 shadow rounded-4 h-100">
                     <div class="card-body text-center">
-                        <h5>Total Weight Lifted</h5>
-                        <p class="display-6">{{ summary[1] or 0 }} kg</p>
+                        <h5 class="card-title" style="color: var(--primary);">Total Weight Lifted</h5>
+                        <p class="card-text fs-4">{{ summary[1] or 0 }} kg</p>
                     </div>
                 </div>
             </div>
-            <div class="col-md-4">
-                <div class="card bg-dark text-white border-0 shadow rounded-4">
+            <div class="col-md-4 col-sm-12">
+                <div class="card bg-dark text-white border-0 shadow rounded-4 h-100">
                     <div class="card-body text-center">
-                        <h5>Last Workout</h5>
-                        <p class="display-6">{{ summary[2] or 'N/A' }}</p>
+                        <h5 class="card-title" style="color: var(--primary)">Last Workout</h5>
+                        <p class="card-text fs-5">{{ summary[2] or 'N/A' }}</p>
                     </div>
                 </div>
             </div>
         </div>
 
-        <h3 class="mt-5 mb-3" style="font-family: 'Helvetica', sans-serif;"> Recent Workouts</h3>
+        <div class="text-center my-4">
+            <a href="/log_workout" class="btn btn-primary btn-lg w-100" style="max-width: 400px; border-radius: 1rem; font-weight: 500;">
+                Start a Workout
+            </a>
+        </div>
 
-        {% if recent_workouts %}
-            {% for date, workouts in recent_workouts.items() %}
-                <h5 class="text-warning mt-4">{{ date }}</h5>
-                <div class="table-responsive">
-                    <table class="table table-dark table-bordered table-hover">
-                        <thead class="table-lgith text-dark">
-                            <tr>
-                                <th>Exercise</th>
-                                <th>Set</th>
-                                <th>Reps</th>
-                                <th>Weight (kg)</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for ex in workouts %}
-                            <tr>
-                                <td>{{ ex[0] }}</td>
-                                <td>{{ ex[1] }}</td>
-                                <td>{{ ex[2] }}</td>
-                                <td>{{ ex[3] }} kg</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+    <!-- recent workouts -->
+    <h3 class="mt-5 mb-4" style="font-family: 'Helvetica', sans-serif;">Recent Workouts</h3>
+    {% if recent_workouts %}
+    <div class="row g-4">
+        {% for date, workouts in recent_workouts.items() %}
+        <div class="col-md-6 col-lg-4">
+            <div class="card bg-dark text-white shadow-sm rounded-4 h-100">
+                <div class="card-body">
+                <h5 class="mb-3" style="color: var(--primary); font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem;">
+                    <i class="bi bi-calendar-event me-2" style="color: var(--primary);"></i>{{ date }}
+                </h5>
+                {% for ex in workouts %}
+                <div class="mb-2">
+                    <strong>{{ ex[0] }}</strong>
+                    <div class="small text-muted">Set {{ ex[1] }} — {{ ex[2] }} reps × <span style="color: var(--primary); font-weight: 500;">{{ ex[3] }} kg</span></div>
                 </div>
-            {% endfor %}
-        {% else %}
-        <p claass="text-muted">No recent workuts.Start Training!</p>
-        {% endif %}
+                <hr style="border-color: #444;" />
+                {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
     </div>
+    {% else %}
+    <p class="text-muted">No recent workouts. Start training!</p>
+    {% endif %}
+
 {% endblock %}

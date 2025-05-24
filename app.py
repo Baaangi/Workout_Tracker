@@ -197,7 +197,7 @@ def history():
 
     conn.close()
 
-    return render_template('history.html', all_workouts=all_workouts)
+    return render_template('history.html', all_workouts=all_workouts, dates=dates)
 
 
 @app.route('/analytics', methods=['GET', 'POST'])

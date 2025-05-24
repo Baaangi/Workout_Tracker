@@ -1,3 +1,44 @@
+/* Flatpickr calendar text for days */
+.flatpickr-day {
+  color: white !important;
+}
+
+/* Current month and year header */
+.flatpickr-month {
+  color: var(--primary);
+}
+
+/* Days of week headers */
+.flatpickr-weekdays {
+  color: var(--primary);
+}
+
+/* Selected/highlighted days */
+.flatpickr-day.selected,
+.flatpickr-day.today,
+.flatpickr-day:hover {
+  color: white !important;
+}
+
+/* Background for selected/highlighted days already handled in JS */
+
+
+
+
+
+
+
+
+/* dashboard */
+.card {
+  background-color: var(--light-dark);
+  border-radius: 1rem;
+}
+
+.card-body small {
+  color: #aaa;
+}
+
 * {
   box-sizing: border-box;
 }
