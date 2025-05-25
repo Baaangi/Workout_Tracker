@@ -246,6 +246,9 @@ def analytics():
         ''', (user_id,))
     exercises = c.fetchall()
 
+    if not exercise_filter and exercises:
+        exercise_filter = exercises[0][0]
+
     
 
     sets_dates = [row[0] for row in freq_data]
@@ -254,7 +257,6 @@ def analytics():
     prog_dates = [row[0] for row in progression]
     prog_weights = [row[1] for row in progression]
 
-    #lifetime_workouts
     c.execute('''
         SELECT COUNT(DISTINCT date), SUM(reps * weight)
         FROM workouts

@@ -1,83 +1,94 @@
 {% extends "base.html" %}
 {% block content %}
 
-    <h1>Workout Analytics</h1>
+    <div class="container mt-4">
+        <h2 class="text-center mb-4" style="font-family: 'Bebas Neue'; color: var(--primary);">Workout Analytics</h2>
 
-    <!-- lifetime workout stats -->
-    <h2>Lifetime Workouts</h2>
-    <div class="card">
-        <h4>Total Workout Days:</h4>
-        <p>{{ total_days }}</p>
-    </div>
+        <div class="row g-4">
+            <div class="col-md-6">
+                <div class="card bg-dark text-white p-3 shadow">
+                    <h5 style="color: var(--teal); font-family: 'Inter';">Total Workouts</h5>
+                    <h3 style="font-family:'Bebas Neue'; color: white;">{{ total_days }}</h3>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card bg-dark text-white p-3 shadow">
+                    <h5 style="color: var(--teal); font-family: 'Inter';">Total Weight Lifted</h5>
+                    <h3 style="font-family: 'Bebas Neue'; color: white;">{{ total_weight }} kg</h3>
+                </div>
+            </div>
+        </div>
+        <div class="card bg-dark text-white mt-4 p-3 shadow">
+            <h4 style="font-family: 'Bebas Neue'; color: var(--primary);">Progression Filter</h4>
+            <form method="POST" class="row g-3">
+                <div class="col-md-4">
+                    <label>Start Date</label>
+                    <input type="date" name="start_date" class="form-control bg-dark text-white border-secondary" value="{{ start_date }}">
+                </div>
+                <div class="col-md-4">
+                    <label>End Date</label>
+                    <input type="date" name="end_date" class="form-control bg-dark text-white border-secondary" value="{{ end_date }}">
+                </div>
+                <div class="col-md-4">
+                    <label>Exercise</label>
+                    <select name="exercise" class="form-select bg-dark text-white border-secondary">
+                        <option value="">ALL</option>
+                        {% for ex in exercises %}
+                            <option value="{{ ex[0] }}" {% if ex[0] == selected_exercise %}selected{% endif %}>{{ ex[0] }}</option>
+                        {% endfor %}
+                    </select>
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-teal mt-2">Apply Filter</button>
+                    </div>
+                </div>
+            </form>
+        </div>
 
-    <div class="card">
-        <h4>Total Weight Lifted:</h4>
-        <p>{{ total_weight }} kg</p>
+            <div class="card bg-dark text-white mt-4 p-3 shadow">
+                <h4 style="font-family: 'Bebas Neue'; color: var(--primary);">Progression for {{ selected_exercise }}</h4>
+                <div id="progressionChart"></div>
+            </div>
+
+        <div class="card bg-dark text-white mt-4 p-3 shadow">
+            <h4 style="font-family: 'Bebas Neue'; color: var(--primary);">Sets Per Workout</h4>
+            <div id="setsChart"></div>
+        </div>
     </div>
 
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 
-    <!-- progression_chart_form -->
-    <h2>Progression Chart</h2>
-    <form method="POST">
-        <label for="start_date">Start Date:
-            <input type="date" name="start_date" value="{{ start_date }}">
-        </label>
-        <label for="end_date">End Date:
-            <input type="date" name="end_date" value="{{ end_date }}">
-        </label>
-        <label for="exercise">Filter by Exercise
-            <select name="exercise">
-                <option value="">ALL</option>
-                {% for ex in exercises %}
-                <option value="{{ ex[0] }}" {% if ex[0] == selected_exercise %}selected{% endif %}>{{ ex[0] }}</option>
-                {% endfor %}
-            </select>
-        </label>
-        <button type="submit">Apply</button>    
-    </form>
-
-    <!-- progression_chart_render -->
-    {% if selected_exercise %}
-        <h3>Progression for {{ selected_exercise }}</h3>
-        <div id="progressionChart"></div>
-    {% endif %}
-
-    <!-- exercise_freq_chart_render -->
-    <h2>Sets Per Workout</h2>
-    <div id="setsChart"></div>
-
-
-    <!-- js logic for rendering charts -->
     <script>
-         var freqData = [{
+        var layoutDark = {
+            paper_bgcolor: "#1e1e1e",
+            plot_bgcolor: "#1e1e1e",
+            font: { color: "#ffffff", family: "Inter"},
+            xaxis: { title: { text: "Date", font: { color: "#ccc"} }, tickfont: { color: "#ccc" }, type:"category" },
+            yaxis: { title: { font: { color: "#ccc" } }, tickfont: { color: "#ccc" } }
+        };
+
+        Plotly.newPlot('setsChart', [{
             x: {{ sets_dates | tojson }},
             y: {{ sets_counts | tojson }},
             type: 'bar',
-            marker: {color: 'orange'}
-        }];
-        Plotly.newPlot('setsChart', freqData, {
-            xaxis: { title: 'Date', type: 'category'},
-            yaxis: { title: 'Number of Sets'}
+            marker: { color: '#2ec4b6'}
+        }], {
+            ...layoutDark,
+            title: { text: 'Number of Sets per Day', font: { color: '#ffa500', family: "Bebas Neue" } }
         });
 
         {% if selected_exercise %}
-            var progData = [{
-            x: {{ prog_dates | tojson }},
-            y: {{ prog_weights | tojson }},
-            type: 'scatter',
-            mode: 'lines+markers',
-            name: 'Top Set Weight'
-        }];
-        Plotly.newPlot('progressionChart', progData, {
-            xaxis: {
-                title: 'Date',
-                type: 'category'
-            },
-            yaxis:{
-                title: 'Weight (kg)'
-            }
-        });
+            Plotly.newPlot('progressionChart', [{
+                x: {{ prog_dates | tojson }},
+                y: {{ prog_weights | tojson }},
+                type: 'scatter',
+                mode: 'lines+markers',
+                line: { color: '#ffa500' },
+                marker: { color: '#ffa500' },
+                name: 'Top Set Weight'
+            }], {
+                ...layoutDark,
+                title: { text: 'Progression Over Time', font: { color: '#ffa500', family: "Bebas Neue" } }
+            });
         {% endif %}
     </script>
 

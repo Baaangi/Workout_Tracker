@@ -174,10 +174,8 @@ a:hover {
 
 h1, h2, h3 {
   font-family: 'Helvetica', sans-serif;
-  font-weight: bold;
   letter-spacing: 1px;
   color: var(--primary);
-  font-weight: 600;
 }
 
 .btn-primary {
