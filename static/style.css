@@ -1,11 +1,34 @@
 /* Flatpickr calendar text for days */
+.calendar-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 1rem 0;
+}
+
+
+.flatpickr-innerContainer,
+.flatpickr-days,
+.dayContainer {
+  background-color: #3b3b3b; /* lighter dark tone for better contrast */
+}
+
 .flatpickr-day {
   color: white !important;
 }
 
 /* Current month and year header */
-.flatpickr-month {
-  color: var(--primary);
+.flatpickr-months {
+  background-color: #8f8f8f !important;
+  border-bottom: 1px solid #444;
+}
+
+/* The visible month name */
+.flatpickr-current-month .cur-month {
+  color: var(--primary) !important;
+  font-family: 'Inter', sans-serif;
+  font-size: 1.2rem;
+  font-weight: bold;
 }
 
 /* Days of week headers */
@@ -18,6 +41,25 @@
 .flatpickr-day.today,
 .flatpickr-day:hover {
   color: white !important;
+}
+
+/* Style the month dropdown */
+.flatpickr-monthDropdown-months {
+  font-size: 16px;
+  color: #3498db;
+  font-weight: 600;
+  background-color: #f8f9fa;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 4px;
+}
+
+/* Style the year input */
+.flatpickr-current-month .cur-month {
+  font-size: 18px;
+  color: #2c3e50;
+  font-weight: bold;
+  font-family: 'Segoe UI', sans-serif;
 }
 
 /* Background for selected/highlighted days already handled in JS */
@@ -76,7 +118,7 @@ a:hover {
   border: 1px solid var(--grey);
 }
 
-h1, h2, h3, h4 {
+h1, h2, h3 {
   font-family: 'Helvetica', sans-serif;
   font-weight: bold;
   letter-spacing: 1px;
