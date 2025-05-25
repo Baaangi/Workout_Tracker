@@ -1,78 +1,72 @@
 {% extends "base.html" %}
 {% block content %}
 
-    <h2>Log Workout</h2>
+    <div class="container-fluid mt-4">
+        <h2 class="text-center" style="font-family: 'Bebas Neue', sans-serif; color: var(--primary);">Log Workout</h2>
+        
+        <div class="text-center mb-3">
+            <input type="date" id="date" name="date" class="form-control d-inline-block text-center"
+                style="max-width: 200px; background-color: var(--dark); color: white; border: 1px solid var(--primary);"
+                value="{{ current_date }}" required>
+        </div>
 
-        <label for="date">Date:</label><br>
-        <input type="date" id="date" name="date" value="{{ current_date }}" required><br><br>
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="card bg-dark text-white rouded-4 shadow p-3" style="max-height: 80vh; overflow-y: auto">
+                    <h4 style="font-family: 'Bebas Neue', sans-serif;">Exercises</h4>
 
-        <button type="button" onclick="openModal()">Add Exercise</button><br><br>
+                    <input type="text" id="searchInput" onkeyup="filterExercises()" placeholder="Search exercises"
+                    class="form-control mb-2" style="background-color: var(--light-dark); color:white; border: 1px solid var(--grey);">
 
-        <div id="setsContainer" style="margin-top: 15px;"></div>
-    
-
-        <div id="workout-entries"></div>
-
-        <button type="button" id="saveWorkoutBtn">Save Workout</button>
-
-
-    <!-- Modal design -->
-     <div id="exerciseModal" class="modal" style=" display:none;">
-        <div class="modal-content">
-            <span class="close" onclick="closeModal()">&times;</span>
-            <h3>Select Exercise</h3>
-
-            <input type="text" id="searchInput" onkeyup="filterExercises()" placeholder="Search exercises">
-
-            <select id="muscleFilter" onchange="filterExercises()">
-                <option value="">All Muscle Groups</option>
-                <option value="Chest">Chest</option>
-                <option value="Back">Back</option>
-                <option value="Arms">Arms</option>
-                <option value="Legs">Legs</option>
-                <option value="Shoulders">Shoulders</option>
-            </select>
-
-            <div id="exerciseList" class="exercise-grid">
-                {% for ex in exercise %}
-                <div class="exercise-card" data-muscle="{{ ex[1] }}" onclick="selectExercise('{{ ex[0] }}')">
-                    <strong>{{ ex[0] }}</strong>
-                    <small>{{ ex[1] }}</small>
+                    <select id="muscleFilter" onchange="filterExercises()" class="form-select mb-3"
+                        style="background-color: var(--light-dark); color: white; border: 1px solid var(--grey);">
+                        <option value="">All Muscle Groups</option>
+                        <option value="Chest">Chest</option>
+                        <option value="Back">Back</option>
+                        <option value="Arms">Arms</option>
+                        <option value="Legs">Legs</option>
+                        <option value="Shoulders">Shoulders</option>
+                    </select>
+                    <div id="exerciseList" class="d-grid gap-2">
+                        {% for ex in exercise %}
+                        <button class="btn btn-outline-light text-start"
+                            style="font-family: 'Inter'; border-color: var(--grey);"
+                            data-muscle="{{ ex[1] }}"
+                            onclick="selectExercise('{{ ex[0] }}')">
+                        <strong>{{ ex[0] }}</strong> <br><small class="text-muted">{{ ex[1] }}</small>
+                        </button>
+                    {% endfor %}
+                    </div>
                 </div>
-                {% endfor %}
+            </div>
+
+            <div class="col-md-8">
+                <div id="workout-entries"></div>
+
+                <button type="button" class="btn btn-teal mt-3" id="saveWorkoutBtn">Save Workout</button>
             </div>
         </div>
-     </div>
-
+    </div>
 
      <script>
-        function openModal(){
-            document.getElementById("exerciseModal").style.display = "block";
-        }
+        function filterExercises() {
+            const input = document.getElementById("searchInput").value.trim().toLowerCase();
+            const muscleFilter = document.getElementById("muscleFilter").value.trim().toLowerCase();
+            const buttons = document.querySelectorAll("#exerciseList button");
 
-        function closeModal(){
-            document.getElementById("exerciseModal").style.display = "none";
-        }
+            buttons.forEach(button => {
+                const nameEl = button.querySelector("strong");
+                const muscle = button.getAttribute("data-muscle")?.toLowerCase() || "";
+                const name = nameEl?.textContent.trim().toLowerCase() || "";
 
-        function filterExercises(){
-            const input = document.getElementById("searchInput").value.toLowerCase();
-            const filter = document.getElementById("muscleFilter").value.toLowerCase();
-            const list = document.querySelectorAll(".exercise-card");
+                const matchesText = input === "" || name.split(' ').some(word => word.startsWith(input));
+                const matchesMuscle = muscleFilter === "" || muscle === muscleFilter;
 
-            list.forEach(card => {
-                const text = card.textContent.toLowerCase();
-                const muscle = card.getAttribute("data-muscle").toLowerCase();
-
-                const matchesText = text.includes(input) || input === "";
-                const matchesMuscle = muscle === filter || filter === "";
-                
-                card.style.display = (matchesText && matchesMuscle) ? "" : "none";
+                button.style.display = (matchesText && matchesMuscle) ? "" : "none";
             });
         }
         
         function selectExercise(name){
-            closeModal();
-
             if (document.querySelector(`[data-exercise="${name}"]`)) {
                 alert("Exercise already added");
                 return;
@@ -82,62 +76,53 @@
 
             const exerciseDiv = document.createElement("div");
             exerciseDiv.setAttribute("data-exercise", name);
-            exerciseDiv.style.border = "1px solid #ccc";
-            exerciseDiv.style.padding = "10px";
-            exerciseDiv.style.marginBottom = "10px"
+            exerciseDiv.className = "workout-card";
+            exerciseDiv.setAttribute("data-exercise", name);
 
             exerciseDiv.innerHTML = `
-                <h4>${name} <button type="button" onclick="removeExercise(this)">Remove</button></h4>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h5 style="font-family: 'Bebas Neue'; margin: 0;">${name}</h5>
+                    <button class="btn btn-sm btn-outline-danger" onclick="removeExercise(this)">Remove</button>
+                </div>
                 <div class="sets"></div>
-                <button type="button" onclick="addSet(this)">Add Set</button>
+                <button class="btn btn-sm btn-outline-teal mt-2" onclick="addSet(this)">Add Set</button>
             `;
 
             container.appendChild(exerciseDiv);
-
-            addSet(exerciseDiv.querySelector(".sets")); 
+            addSet(exerciseDiv.querySelector(".sets"));
         }
 
-        function removeExercise(button) {
-            button.parentElement.parentElement.remove();
+        function removeExercise(btn) {
+            btn.closest(".workout-card").remove();
         }
 
-        function addSet(buttonOrContainer) {
-
-            let setsDiv;
-            if (buttonOrContainer.classList.contains("sets")) {
-            setsDiv = buttonOrContainer;
-            } else {
-            setsDiv = buttonOrContainer.previousElementSibling;
-            }
-
+        function addSet(btnOrContainer) {
+            let setsDiv = btnOrContainer.classList.contains("sets") ? btnOrContainer : btnOrContainer.previousElementSibling;
             const setCount = setsDiv.children.length + 1;
 
             const setDiv = document.createElement("div");
-            setDiv.style.marginBottom = "5px";
+            setDiv.className = "row g-2 align-items-center mb-2";
 
             setDiv.innerHTML = `
-                <label>Set ${setCount}:</label>
-                Reps: <input type="number" class="reps" min="1" required style="width:50px;">
-                Weight (kg): <input type="number" class="weight" min="0" step="0.1" style="width:70px;">
-                Notes: <input type="text" class="notes" style="width:150px;">
-                <button type="button" onclick="removeSet(this)">Remove</button>
+                <div class="col-auto"><label>Set ${setCount}:</label></div>
+                <div class="col"><input type="number" class="form-control reps" placeholder="Reps" min="1"></div>
+                <div class="col"><input type="number" class="form-control weight" placeholder="Weight (kg)" min="0"></div>
+                <div class="col"><input type="text" class="form-control notes" placeholder="Notes"></div>
+                <div class="col-auto"><button class="btn btn-sm btn-danger" onclick="removeSet(this)">X</button></div>
             `;
 
             setsDiv.appendChild(setDiv);
         }
 
         function removeSet(button) {
-            const setDiv = button.parentElement;
+            const setDiv = button.closest(".row");
             const setsDiv = setDiv.parentElement;
             setDiv.remove();
-
-            // Re-label remaining sets
             [...setsDiv.children].forEach((setEl, i) => {
-            setEl.querySelector("label").textContent = `Set ${i + 1}:`;
+                setEl.querySelector("label").textContent = `Set ${i + 1}:`;
             });
         }
 
-        // On Save Workout button click, gather data and POST JSON
         document.getElementById("saveWorkoutBtn").addEventListener("click", () => {
             const date = document.getElementById("date").value;
             if (!date) {
