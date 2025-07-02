@@ -3,10 +3,17 @@
 
 <h2 style="text-align: center; padding-top: 2%; font-family: 'Bebas Neue', sans-serif; color: var(--primary); margin-bottom: 1.5rem;">Workout History</h2>
 
-<!-- Calendar container -->
-<div class="calendar-wrapper" style="max-width: 400px; margin-bottom: 2rem; margin-left: auto; margin-right: auto;">
-  <div id="calendar"></div>
+<!-- Calendar Header -->
+<div style="max-width: 900px; margin: auto; text-align: center; margin-bottom: 1.5rem;">
+  <div style="display: flex; justify-content: space-between; align-items: center; color: var(--primary); font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; padding: 0 1rem;">
+    <button class="btn btn-sm btn-outline-light" onclick="changeMonth(-1)">«</button>
+    <div id="monthYear"></div>
+    <button class="btn btn-sm btn-outline-light" onclick="changeMonth(1)">»</button>
+  </div>
 </div>
+
+<!-- Calendar Grid -->
+<div id="calendar" style="max-width: 900px; margin: auto; display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; font-family: 'Inter', sans-serif;"></div>
 
 {% if all_workouts %}
   {% for date, exercises in all_workouts.items() %}
@@ -44,73 +51,96 @@
   <p class="text-muted text-center">No workouts logged yet. Start training!</p>
 {% endif %}
 
-<!-- Include simple JS calendar -->
-<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-<link href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" rel="stylesheet">
 
 <script>
-  // Dates with workouts in "YYYY-MM-DD" format
-    const workoutDates = {{ dates | tojson }};
+  const workoutDates = {{ dates | tojson }};
+  let currentDate = new Date();
 
-    flatpickr("#calendar", {
-    inline: true,
-    static: true,
-    enable: workoutDates,
-    locale: {
-        firstDayOfWeek: 1 // Monday start
-    },
-    onDayCreate: function(dObj, dStr, fp, dayElem) {
-        const d = dayElem.dateObj;
-        const year = d.getFullYear();
-        const month = String(d.getMonth() + 1).padStart(2, '0');
-        const day = String(d.getDate()).padStart(2, '0');
-        const dateStr = `${year}-${month}-${day}`;
+  const calendarEl = document.getElementById("calendar");
+  const monthYearEl = document.getElementById("monthYear");
 
-        if (workoutDates.includes(dateStr)) {
-        dayElem.style.backgroundColor = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim();
-        dayElem.style.color = 'white';
-        dayElem.style.borderRadius = '50%';
-        dayElem.style.fontWeight = '600';
+  function renderCalendar(date) {
+    calendarEl.innerHTML = "";
+
+    const year = date.getFullYear();
+    const month = date.getMonth();
+
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const firstDayIndex = firstDay.getDay(); // 0 (Sun) to 6 (Sat)
+
+    monthYearEl.textContent = date.toLocaleString("default", { month: "long", year: "numeric" });
+
+    const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    dayNames.forEach(day => {
+      const cell = document.createElement("div");
+      cell.textContent = day;
+      cell.style.textAlign = "center";
+      cell.style.color = "var(--primary)";
+      cell.style.fontWeight = "bold";
+      calendarEl.appendChild(cell);
+    });
+
+    const totalCells = firstDayIndex + lastDay.getDate();
+    for (let i = 0; i < totalCells; i++) {
+      const cell = document.createElement("div");
+      cell.style.height = "80px";
+      cell.style.display = "flex";
+      cell.style.alignItems = "center";
+      cell.style.justifyContent = "center";
+      cell.style.backgroundColor = "#1e1e1e";
+      cell.style.border = "1px solid #444";
+      cell.style.borderRadius = "8px";
+      cell.style.color = "#ccc";
+
+      if (i >= firstDayIndex) {
+        const day = i - firstDayIndex + 1;
+        const fullDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        cell.textContent = day;
+
+        // Highlight if workout exists
+        if (workoutDates.includes(fullDate)) {
+          cell.style.backgroundColor = "#EE7828";
+          cell.style.color = "black";
+          cell.style.fontWeight = "bold";
         }
-    },
-  disableMobile: true,
-});
 
+        // Highlight today
+        const today = new Date();
+        if (
+          day === today.getDate() &&
+          month === today.getMonth() &&
+          year === today.getFullYear()
+        ) {
+          cell.style.outline = "2px solid var(--primary)";
+        }
+      } else {
+        cell.style.backgroundColor = "#111";
+        cell.style.border = "1px solid #222";
+      }
+
+      calendarEl.appendChild(cell);
+    }
+  }
+
+  function changeMonth(diff) {
+    currentDate.setMonth(currentDate.getMonth() + diff);
+    renderCalendar(currentDate);
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    renderCalendar(currentDate);
+  });
 </script>
 
 <style>
-  /* Customize flatpickr calendar bg and text */
-  .flatpickr-calendar {
-    background: var(--light-dark);
-    color: white;
-    border-radius: 10rem;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
-  }
-  .flatpickr-months {
-    color: var(--primary);
-    font-weight: 600;
-  }
-  .flatpickr-weekdays {
-    color: var(--grey);
-  }
-
-  /* workout cards */
-  .card-body table {
-    border-collapse: separate !important;
-    border-spacing: 0 0.5rem !important;
-  }
-  .card-body table thead th {
-    border-bottom: 2px solid var(--primary);
-    color: var(--primary);
-    font-weight: 700;
-  }
-  .card-body table tbody tr {
-    background-color: #222; 
-  }
-  .card-body table tbody tr td {
-    vertical-align: middle;
-    color: white;
-  }
+#calendar div {
+  transition: all 0.2s ease-in-out;
+}
+#calendar div:hover {
+  background-color: #333 !important;
+  cursor: pointer;
+}
 </style>
 
 {% endblock %}
