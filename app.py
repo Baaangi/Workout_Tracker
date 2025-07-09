@@ -13,6 +13,9 @@ from datetime import datetime, date
 
 app = Flask(__name__)
 app.secret_key = 'mysecrekey'
+app.config['TEMPLATES_AUTO_RELOAD'] = True
+app.jinja_env.auto_reload = True
+
 
 
 def init_db():
@@ -30,7 +33,7 @@ def init_db():
         CREATE TABLE IF NOT EXISTS exercises (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL UNIQUE,
-            target_muscle_group TEXT NOT NULL,
+            muscle_group TEXT NOT NULL,
             equipment TEXT,
             instruction TEXT
         )
@@ -41,12 +44,13 @@ def init_db():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id INTEGER,
             date TEXT NOT NULL,
-            exercise TEXT NOT NULL,
+            exercise_id TEXT NOT NULL,
             set_number INTEGER NOT NULL,
             reps INTEGER NOT NULL,
             weight REAL,
             notes TEXT,
-            FOREIGN KEY (user_id) REFERENCES users(id)
+            FOREIGN KEY (user_id) REFERENCES users(id),
+            FOREIGN KEY (exercise_id) REFERENCES exercises(id)
         )
     ''')
     conn.commit()
@@ -119,10 +123,11 @@ def dashboard():
 
     recent_workouts = {}
     for date in recent_dates:
-        c.execute('''SELECT exercise, set_number, reps, weight 
-                  FROM workouts
-                  WHERE user_id = ? AND date = ?
-                  ORDER BY exercise, set_number''', (user_id, date))
+        c.execute('''SELECT e.name, w.set_number, w.reps, w.weight 
+                  FROM workouts w
+                  JOIN exercises e ON w.exercise_id = e.id
+                  WHERE w.user_id = ? AND w.date = ?
+                  ORDER BY e.name, w.set_number''', (user_id, date))
         recent_workouts[date] = c.fetchall()
 
     conn.close()
@@ -151,11 +156,11 @@ def log_workout():
         c = conn.cursor()
         try:
             for entry in entries:
-                exercise = entry['exercise']
+                exercise_id = entry['exercise_id']
                 for idx, s in enumerate(entry['sets']):
-                    c.execute('''INSERT INTO workouts (user_id, date, exercise, set_number, reps, weight, notes)
+                    c.execute('''INSERT INTO workouts (user_id, date, exercise_id, set_number, reps, weight, notes)
                             VALUES (?, ?, ?, ?, ?, ?, ?)''',
-                            (user_id, date, exercise, idx + 1, s['reps'], s['weight'], s.get('notes','')))
+                            (user_id, date, exercise_id, idx + 1, s['reps'], s['weight'], s.get('notes','')))
             conn.commit()
             return jsonify({'success': True})
         except Exception as e:
@@ -166,7 +171,7 @@ def log_workout():
 
     conn = sqlite3.connect('workout_tracker.db')
     c = conn.cursor()
-    c.execute("SELECT name, target_muscle_group FROM exercises")
+    c.execute("SELECT name, muscle_group FROM exercises")
     exercises = c.fetchall()
     conn.close()
 
@@ -189,10 +194,11 @@ def history():
 
     all_workouts = {}
     for date in dates:
-        c.execute('''SELECT exercise, set_number, reps, weight
-                  FROM workouts
-                  WHERE user_id = ? AND date = ?
-                  ORDER BY exercise, set_number''', (user_id, date))
+        c.execute('''SELECT e.name, w.set_number, w.reps, w.weight
+                  FROM workouts w
+                  JOIN exercises e ON w.exercise_id = e.id
+                  WHERE w.user_id = ? AND w.date = ?
+                  ORDER BY e.name, w.set_number''', (user_id, date))
         all_workouts[date] = c.fetchall()
 
     conn.close()
@@ -233,17 +239,18 @@ def analytics():
     progression = []
     if exercise_filter:
         c.execute('''
-            SELECT date, MAX(weight)
-            FROM workouts
-            WHERE user_id = ? AND exercise = ? AND date BETWEEN ? AND ?
-            GROUP BY date
-            ORDER BY date
+            SELECT w.date, MAX(w.weight)
+            FROM workouts w
+            JOIN exercises e ON w.exercise_id = e.id
+            WHERE w.user_id = ? AND e.name = ? AND w.date BETWEEN ? AND ?
+            GROUP BY w.date
+            ORDER BY w.date
             ''', (user_id, exercise_filter, start_date, end_date))
     progression = c.fetchall()
 
     c.execute('''
-        SELECT DISTINCT exercise FROM workouts WHERE user_id = ? ORDER BY exercise
-        ''', (user_id,))
+        SELECT DISTINCT name FROM exercises ORDER BY name
+        ''')
     exercises = c.fetchall()
 
     if not exercise_filter and exercises:
@@ -276,3 +283,5 @@ def analytics():
 if __name__ == '__main__':
     init_db()
     app.run(debug=True)
+
+    
