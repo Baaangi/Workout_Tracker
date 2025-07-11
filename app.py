@@ -278,6 +278,37 @@ def analytics():
     return render_template('analytics.html',total_days=total_days, total_weight=total_weight, exercises=exercises, sets_dates=sets_dates, sets_counts=sets_counts, prog_dates=prog_dates, prog_weights=prog_weights, selected_exercise=exercise_filter, start_date=start_date, end_date=end_date) 
                            
 
+@app.route("/recommend_routine", methods=["GET", "POST"])
+def recommend_routine():
+    if request.method == "POST":
+        level = request.form.get("level")
+        days = int(request.form.get("days"))
+
+        session['selected_level'] = level
+        session['selected_days'] = days
+
+        return redirect("/routine_results")
+
+    return render_template("recommend_routine.html")
+
+
+@app.route("/routine_results")
+def routine_results():
+    level = session.get('selected_level')
+    days = session.get('selected_days')
+
+    if not level or not days:
+        flash("Please select your routine preferences.")
+        return redirect("/recommend_routine")
+
+    conn = sqlite3.connect('workout_tracker.db')
+    conn.row_factory = sqlite3.Row
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM workout_routines WHERE level = ? AND days_per_week = ?", (level, days))
+    routines = cur.fetchall()
+    conn.close()
+
+    return render_template("routine_results.html", routines=routines)
 
 
 if __name__ == '__main__':

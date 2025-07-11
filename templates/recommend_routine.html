@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="container my-5">
+    <h2 class="text-center mb-4" style="font-family: 'Bebas Neue', sans-serif; color: var(--primary); font-size: 2.5rem;">
+        Find Your Ideal Workout Routine
+    </h2>
+
+    <form method="POST" action="{{ url_for('recommend_routine') }}" class="bg-dark p-4 rounded-4 shadow-lg mx-auto" style="max_width: 500px;">
+        <div class="mb-3">
+            <label for="level" class="form-label text-white">Your Experience Level</label>
+            <select class="form-select bg-dark text-white border-secondary" name="level" id="level" required>
+                <option value="">-- Select Level --</option>
+                <option value="Beginner">Beginner</option>
+                <option value="Intermediate">Intermediate</option>
+                <option value="Advanced">Advanced</option>
+            </select>
+        </div>
+
+        <div class="mb-4">
+            <label for="days" class="form-label text-white">How Many Days Can You Train Per Week?</label>
+            <select class="form-select bg-dark text-white border-secondary" name="days" id="days" required>
+                <option value="">-- Select Days --</option>
+                <option value="3">3 Days</option>
+                <option value="4">4 Days</option>
+                <option value="5">5 Days</option>
+                <option value="6">6 Days</option>
+            </select>
+        </div>
+
+        <div class="text-center">
+            <button type="submit" class="btn btn-lg btn-primary px-4 rounded-pill" style="background-color: var(--primary); font-weight: 600;">
+                Show Routines
+            </button>
+        </div>
+    </form>
+</div>
+
+{% endblock %}
