@@ -311,6 +311,35 @@ def routine_results():
     return render_template("routine_results.html", routines=routines)
 
 
+@app.route('/routine/<int:routine_id>')
+def view_routine(routine_id):
+    conn = sqlite3.connect('workout_tracker.db')
+    c = conn.cursor()
+
+    c.execute("SELECT name FROM workout_routines WHERE id = ?", (routine_id,))
+    routine = c.fetchone()
+    if not routine:
+        return "Routine not found", 404
+
+    # Get exercises grouped by day
+    c.execute("""
+        SELECT rd.day_name, e.name, rd.sets, rd.reps
+        FROM routine_days rd
+        JOIN exercises e ON rd.exercise_id = e.id
+        WHERE rd.routine_id = ?
+        ORDER BY rd.day_name, rd.id
+    """, (routine_id,))
+    rows = c.fetchall()
+    conn.close()
+
+    routine_days = {}
+    for day_name, ex_name, sets, reps in rows:
+        routine_days.setdefault(day_name, []).append((ex_name, sets, reps))
+
+    return render_template('view_routine.html', routine_name=routine[0], routine_days=routine_days)
+
+
+
 if __name__ == '__main__':
     init_db()
     app.run(debug=True)
