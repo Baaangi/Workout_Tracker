@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container py-5">
+
+    <!-- Header Section -->
+    <div class="text-center mb-5">
+        <h1 style="font-family: 'Bebas Neue'; font-size: 2.8rem; color: var(--primary); letter-spacing: 1px;">
+            Generate Your Custom Workout
+        </h1>
+        <p class="text-muted" style="font-family: 'Inter'; font-size: 1rem;">
+            Personalized workout suggestions based on your recent training history
+        </p>
+    </div>
+
+    <!-- Generate Button -->
+    <div id="generate-section" class="text-center">
+        <button id="generate-btn" class="btn px-5 py-3 rounded-pill generate-button" style="font-family: 'Inter'; font-size: 1.1rem;">
+             Generate Workout Based on Recent Activity
+        </button>
+    </div>
+
+    <!-- Loading Animation -->
+    <div id="loading" class="text-center py-5" style="display: none;">
+        <div class="spinner-border text-light" role="status" style="width: 3rem; height: 3rem;"></div>
+        <p class="mt-3" style="font-family: 'Inter'; color: #ccc;">Hang tight... Crafting your perfect workout!</p>
+    </div>
+
+    <!-- Recommendations -->
+    <div id="recommendations" class="row mt-4" style="display: none;">
+        {% for rec in recommendations %}
+        <div class="col-md-6 mb-4 animate-card">
+            <div class="rounded-4 shadow workout-card">
+                <div class="px-4 py-3 card-header-top">
+                    {{ rec[1] }}
+                </div>
+                <div class="px-4 py-3" style="font-family: 'Inter'; font-size: 0.95rem; color: #ccc;">
+                    <p class="mb-1"><strong>Primary Muscle:</strong> {{ rec[2] }}</p>
+                    <p class="mb-1"><strong>Equipment:</strong> {{ rec[3] }}</p>
+                    <p class="mb-1"><strong>Type:</strong> {{ rec[4] }}</p>
+                    <p class="mb-0"><strong>Difficulty:</strong> {{ rec[5] }}</p>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="text-center mt-4">
+        <a href="{{ url_for('dashboard') }}" class="btn btn-outline-light px-4 py-2 rounded-pill" style="font-family: 'Inter';">
+            ← Back to Dashboard
+        </a>
+    </div>
+</div>
+
+<!-- Custom Styles & Animations -->
+<style>
+    .generate-button {
+        background-color: transparent;
+        color: var(--primary);
+        border: 2px solid var(--primary);
+        transition: all 0.3s ease;
+    }
+
+    .generate-button:hover {
+        background-color: var(--primary);
+        color: black;
+        transform: scale(1.05);
+    }
+
+    .workout-card {
+        background-color: #1e1e1e;
+        border: 1px solid #333;
+        transition: all 0.3s ease;
+    }
+
+    .workout-card:hover {
+        border-color: var(--primary);
+        box-shadow: 0 0 12px var(--primary);
+    }
+
+    .card-header-top {
+        border-top: 4px solid var(--primary);
+        border-top-left-radius: 1rem;
+        border-top-right-radius: 1rem;
+        font-family: 'Bebas Neue';
+        font-size: 1.3rem;
+        color: white;
+        background-color: #1e1e1e;
+    }
+
+    .animate-card {
+        opacity: 0;
+        transform: translateY(30px);
+        animation: fadeInUp 0.6s ease forwards;
+    }
+
+    .animate-card:nth-child(1) { animation-delay: 0.1s; }
+    .animate-card:nth-child(2) { animation-delay: 0.2s; }
+    .animate-card:nth-child(3) { animation-delay: 0.3s; }
+    .animate-card:nth-child(4) { animation-delay: 0.4s; }
+    .animate-card:nth-child(5) { animation-delay: 0.5s; }
+
+    @keyframes fadeInUp {
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>
+
+<!-- JavaScript -->
+<script>
+    document.getElementById("generate-btn").addEventListener("click", function () {
+        document.getElementById("generate-section").style.display = "none";
+        document.getElementById("loading").style.display = "block";
+
+        setTimeout(() => {
+            document.getElementById("loading").style.display = "none";
+            document.getElementById("recommendations").style.display = "flex";
+        }, 3500); // Simulated loading
+    });
+</script>
+{% endblock %}

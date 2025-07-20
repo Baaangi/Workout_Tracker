@@ -45,16 +45,23 @@
               </a>
             </li>
             <li class="nav-item">
-              <a class="nav-link text-white" href="/recommend_routine">
+              <a class="nav-link text-white" href="/workout_routine">
                 <i class="bi bi-lightbulb me-1" style="color: var(--primary);"></i> Workout Routines
               </a>
             </li>
 
             <li class="nav-item"></li>
+              <a class="nav-link text-white" href="{{ url_for('recommender') }}">
+                <i class="bi bi-sliders" style="color: var(--primary);"></i> Recommendations
+              </a>
+            </li>
+
+            <li class="nav-item">
               <a class="nav-link text-white" href="/logout">
                 <i class="bi bi-box-arrow-right me-1" style="color: var(--primary);"></i> Logout
               </a>
             </li>
+
           </ul>
         </div>
       </div>
