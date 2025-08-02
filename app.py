@@ -8,6 +8,18 @@ import os
 import csv
 from datetime import datetime, date
 
+#admin
+from functools import wraps
+
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not session.get('user_id') or not session.get('is_admin'):
+            flash("Access Denied. Admins Only.", "error")
+            return redirect('/dashboard')
+        return f(*args, **kwargs)
+    return decorated_function
+
 #recommender
 from recommender import build_similarity_matrix
 DB_PATH = os.path.join(os.getcwd(), "workout_tracker.db")
@@ -99,8 +111,14 @@ def login():
         if user and check_password_hash(user[2], password):
             session['user'] = user[1]
             session['user_id'] = user[0]
-            return redirect('/dashboard')
+            session['is_admin'] = user[3]
+
+        if user[3] == 1:
+            return redirect('/admin')
         else:
+            return redirect('/dashboard')
+        
+    else:
             flash("Invalid credentials", "error")
 
     return render_template('login.html')
@@ -159,7 +177,13 @@ def log_workout():
         c = conn.cursor()
         try:
             for entry in entries:
-                exercise_id = entry['exercise_id']
+                exercise_name = entry['exercise']
+                c.execute("SELECT id FROM exercises WHERE name = ?", (exercise_name,))
+                res = c.fetchone()
+                if not res:
+                    raise Exception(f"Exercise '{exercise_name}' not found.")
+                exercise_id = res[0]
+
                 for idx, s in enumerate(entry['sets']):
                     c.execute('''INSERT INTO workouts (user_id, date, exercise_id, set_number, reps, weight, notes)
                             VALUES (?, ?, ?, ?, ?, ?, ?)''',
@@ -376,7 +400,55 @@ def recommender():
     recommendations = recommendations[:5]
     conn.close()
 
+    
     return render_template("recommender.html", recommendations=recommendations)
+
+
+#ADMIN_PAGES
+@app.route('/admin')
+@admin_required
+def admin_dashboard():
+    return render_template('admin/dashboard.html')
+
+
+@app.route('/admin/users')
+@admin_required
+def admin_users():
+    conn = sqlite3.connect("workout_tracker.db")
+    c = conn.cursor()
+    c.execute("SELECT id, username, is_admin FROM users")
+    users = c.fetchall()
+    conn.close()
+    return render_template('admin/users.html', users=users)
+
+@app.route('/admin/delete_user/<int:user_id>')
+@admin_required
+def delete_user(user_id):
+    # prevent deleting your own account
+    if user_id == session['user_id']:
+        flash("You can't delete your own account.", "error")
+        return redirect('/admin/users')
+
+    conn = sqlite3.connect('workout_tracker.db')
+    c = conn.cursor()
+    c.execute("DELETE FROM users WHERE id = ?", (user_id,))
+    conn.commit()
+    conn.close()
+    flash("User deleted successfully.", "success")
+    return redirect('/admin/users')
+
+
+
+@app.route('/admin/exercises')
+@admin_required
+def admin_exercises():
+    return render_template('admin/exercises.html')
+
+@app.route('/admin/logs')
+@admin_required
+def admin_logs():
+    return render_template('admin/logs.html')
+
 
 if __name__ == '__main__':
     init_db()
