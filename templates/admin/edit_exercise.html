@@ -1,0 +1,34 @@
+{% extends 'admin/base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <h2>Edit Exercise</h2>
+    <form method="POST">
+        <div class="mb-3">
+            <label>Name</label>
+            <input type="text" name="name" value="{{ exercise[1] }}" class="form-control" required>
+        </div>
+        <div class="mb-3">
+            <label>Muscle Group</label>
+            <input type="text" name="muscle_group" value="{{ exercise[2] }}" class="form-control" required>
+        </div>
+        <div class="mb-3">
+            <label>Primary Muscle</label>
+            <input type="text" name="primary_muscle" value="{{ exercise[6] }}" class="form-control" required>
+        </div>
+        <div class="mb-3">
+            <label>Equipment</label>
+            <input type="text" name="equipment" value="{{ exercise[3] }}" class="form-control" required>
+        </div>
+        <div class="mb-3">
+            <label>Type</label>
+            <input type="text" name="type" value="{{ exercise[4] }}" class="form-control" required>
+        </div>
+        <div class="mb-3">
+            <label>Difficulty</label>
+            <input type="text" name="difficulty" value="{{ exercise[5] }}" class="form-control" required>
+        </div>
+        <button type="submit" class="btn btn-success">Update</button>
+        <a href="/admin/exercises" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+{% endblock %}

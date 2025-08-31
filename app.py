@@ -439,15 +439,101 @@ def delete_user(user_id):
 
 
 
-@app.route('/admin/exercises')
+@app.route('/admin/exercises', methods=['GET', 'POST'])
 @admin_required
 def admin_exercises():
-    return render_template('admin/exercises.html')
+    if 'user_id' not in session or not session.get('is_admin'):
+        return redirect('/login')
+    
+    if request.method == 'POST':
+        name = request.form.get('name')
+        muscle_group = request.form.get('muscle_group')
+        primary_muscle = request.form.get('primary_muscle')
+        equipment = request.form.get('equipment')
+        type = request.form.get('type') 
+        difficulty = request.form.get("difficulty")
+
+        if not all([name, muscle_group, primary_muscle, equipment, type, difficulty]):
+                flash('All fields are required', 'danger')
+        else:
+            conn = sqlite3.connect('workout_tracker.db')
+            try:
+                conn.execute("""
+                    INSERT INTO exercises (name, muscle_group, primary_muscle, equipment, type, difficulty)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                """, (name, muscle_group, primary_muscle, equipment, type, difficulty))
+                conn.commit()
+                flash('Exercise added successfully!', 'success')
+            except sqlite3.IntegrityError:
+                flash('Exercise name must be unique', 'danger')
+            conn.close()
+
+    conn = sqlite3.connect('workout_tracker.db')
+    c = conn.cursor()
+    c.execute('SELECT * FROM exercises')
+    exercises = c.fetchall()
+    conn.close()
+    return render_template("admin/exercises.html", exercises=exercises)
+
+
+@app.route('/admin/delete_exercise/<int:exercise_id>', methods=['POST', 'GET'])
+@admin_required
+def delete_exercise(exercise_id):
+    conn = sqlite3.connect('workout_tracker.db')
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM exercises WHERE id = ?", (exercise_id,))
+    conn.commit()
+    conn.close()
+    flash("Exercise deleted successfully!", "success")
+    return redirect('/admin/exercises')
+
+@app.route('/admin/edit_exercise/<int:exercise_id>', methods=['GET', 'POST'])
+@admin_required
+def edit_exercise(exercise_id):
+    if 'user_id' not in session or not session.get('is_admin'):
+        return redirect('/login')
+
+    conn = sqlite3.connect('workout_tracker.db')
+    if request.method == 'POST':
+        name = request.form.get('name')
+        muscle_group = request.form.get('muscle_group')
+        primary_muscle = request.form.get('primary_muscle')
+        equipment = request.form.get('equipment')
+        type = request.form.get('type')
+        difficulty = request.form.get('difficulty')
+
+        if not all([name, muscle_group, primary_muscle, equipment, type, difficulty]):
+            flash('All fields are required', 'danger')
+        else:
+            conn.execute("""
+                UPDATE exercises
+                SET name=?, muscle_group=?, primary_muscle=?, equipment=?, type=?, difficulty=?
+                WHERE id=?
+            """, (name, muscle_group, primary_muscle, equipment, type, difficulty, exercise_id))
+            conn.commit()
+            flash('Exercise updated successfully!', 'success')
+            conn.close()
+            return redirect('/admin/exercises')
+
+    exercise = conn.execute("SELECT * FROM exercises WHERE id=?", (exercise_id,)).fetchone()
+    conn.close()
+    return render_template('admin/edit_exercise.html', exercise=exercise)
+
+    
 
 @app.route('/admin/logs')
 @admin_required
-def admin_logs():
-    return render_template('admin/logs.html')
+def admin_workout_logs():
+    conn = sqlite3.connect('workout_tracker.db')
+    logs = conn.execute('''
+        SELECT w.id, u.username, e.name AS exercise_name, w.date, w.set_number, w.reps, w.weight, w.notes
+        FROM workouts w
+        JOIN users u ON w.user_id = u.id
+        JOIN exercises e ON w.exercise_id = e.id
+        ORDER BY w.date DESC
+    ''').fetchall()
+    conn.close()
+    return render_template('admin/logs.html', logs=logs)
 
 
 if __name__ == '__main__':
