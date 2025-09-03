@@ -1,39 +1,41 @@
 {% extends 'admin/base.html' %}
 
 {% block content %}
-<h2>Manage Users</h2>
-<table class="table table-dark table-striped">
-    <thead>
-        <tr>
-            <th>ID</th>
-            <th>Username</th>
-            <th>Status?</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for user in users %}
-        <tr>
-            <td>{{ user[0] }}</td>
-            <td>{{ user[1] }}</td>
-            <td>
-                {% if user[2] %}
-                    <span class="badge bg-warning text-dark">Admin</span>
-                {% else %}
-                    <span class="badge bg-light text-dark">User</span>
-                {% endif %}  
-            </td>
-            <td>
-                {% if user[0] != session['user_id'] %}
-                <a href="/admin/delete_user/{{ user[0] }}" class="btn btn-sm btn-danger" onclick="return confirm('Delete this user?')">Delete</a>
-                {% else %}
-                <span class="text-muted">Your Account</span>
-                {% endif %}
-            </td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+<div class="container mt-4">
+    <h2 class="mb-4">Manage Users</h2>
+    <table class="table table-dark table-striped">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Username</th>
+                <th>Status?</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for user in users %}
+            <tr>
+                <td>{{ user[0] }}</td>
+                <td>{{ user[1] }}</td>
+                <td>
+                    {% if user[2] %}
+                        <span class="badge bg-warning text-dark">Admin</span>
+                    {% else %}
+                        <span class="badge bg-light text-dark">User</span>
+                    {% endif %}  
+                </td>
+                <td>
+                    {% if user[0] != session['user_id'] %}
+                    <a href="/admin/delete_user/{{ user[0] }}" class="btn btn-sm btn-danger" onclick="return confirm('Delete this user?')">Delete</a>
+                    {% else %}
+                    <span class="text-muted">Your Account</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
 
 
 {% endblock %}

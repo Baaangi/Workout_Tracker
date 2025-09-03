@@ -408,7 +408,29 @@ def recommender():
 @app.route('/admin')
 @admin_required
 def admin_dashboard():
-    return render_template('admin/dashboard.html')
+    conn = sqlite3.connect("workout_tracker.db")
+
+    total_users = conn.execute('SELECT COUNT(*) FROM users').fetchone()[0]
+    total_exercises = conn.execute('SELECT COUNT(*) FROM exercises').fetchone()[0]
+    total_workouts = conn.execute('SELECT COUNT(*) FROM workouts').fetchone()[0]
+    total_admins = conn.execute('SELECT COUNT(*) FROM users WHERE is_admin = 1').fetchone()[0]
+
+    recent_logs = conn.execute('''
+        SELECT u.username, e.name AS exercise_name, w.date, w.reps, w.weight
+        FROM workouts w
+        JOIN users u ON w.user_id = u.id
+        JOIN exercises e ON w.exercise_id = e.id
+        ORDER BY w.date DESC
+        LIMIT 5
+    ''').fetchall()
+
+    conn.close()
+    return render_template('admin/dashboard.html',
+                           total_users=total_users,
+                           total_exercises=total_exercises,
+                           total_workouts=total_workouts,
+                           total_admins=total_admins,
+                           recent_logs=recent_logs)
 
 
 @app.route('/admin/users')
