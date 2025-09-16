@@ -98,6 +98,8 @@ def register():
 
 @app.route('/login', methods = ['GET', 'POST'])
 def login():
+    error = None
+    
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
@@ -113,15 +115,14 @@ def login():
             session['user_id'] = user[0]
             session['is_admin'] = user[3]
 
-        if user[3] == 1:
-            return redirect('/admin')
+            if user[3] == 1:
+                return redirect('/admin')
+            else:
+                return redirect('/dashboard')
         else:
-            return redirect('/dashboard')
-        
-    else:
-            flash("Invalid credentials", "error")
+            error = "Invalid username or password"
 
-    return render_template('login.html')
+    return render_template('login.html', error=error)
 
 @app.route('/dashboard')
 def dashboard():
@@ -186,23 +187,41 @@ def log_workout():
 
                 for idx, s in enumerate(entry['sets']):
                     c.execute('''INSERT INTO workouts (user_id, date, exercise_id, set_number, reps, weight, notes)
-                            VALUES (?, ?, ?, ?, ?, ?, ?)''',
-                            (user_id, date, exercise_id, idx + 1, s['reps'], s['weight'], s.get('notes','')))
+                                 VALUES (?, ?, ?, ?, ?, ?, ?)''',
+                              (user_id, date, exercise_id, idx + 1, s['reps'], s['weight'], s.get('notes', '')))
             conn.commit()
             return jsonify({'success': True})
         except Exception as e:
-            print("Error loggin workout:", e)
+            print("Error logging workout:", e)
             return jsonify({'success': False, 'error': str(e)})
         finally:
             conn.close()
 
+    # GET request
     conn = sqlite3.connect('workout_tracker.db')
     c = conn.cursor()
     c.execute("SELECT name, muscle_group FROM exercises")
     exercises = c.fetchall()
     conn.close()
 
-    return render_template('log_workout.html', exercise=exercises, current_date=datetime.now().strftime("%Y-%m-%d"))
+    # Handle prefilled exercises from recommended workout
+    prefilled = []
+    if 'recommended_workout' in session:
+        ids = session.pop('recommended_workout')  # remove after using
+        conn = sqlite3.connect('workout_tracker.db')
+        c = conn.cursor()
+        q_marks = ",".join("?" for _ in ids)
+        c.execute(f"SELECT name FROM exercises WHERE id IN ({q_marks})", ids)
+        prefilled = [row[0] for row in c.fetchall()]  # only pass exercise names to JS
+        conn.close()
+
+    return render_template(
+        'log_workout.html',
+        exercise=exercises,
+        current_date=datetime.now().strftime("%Y-%m-%d"),
+        prefilled=prefilled  # <-- this is crucial for JS prefill
+    )
+
 
 
 @app.route('/history')
@@ -350,7 +369,7 @@ def view_routine(routine_id):
 
     # Get exercises grouped by day
     c.execute("""
-        SELECT rd.day_name, e.name, rd.sets, rd.reps
+        SELECT rd.day_name, e.id, e.name, rd.sets, rd.reps
         FROM routine_days rd
         JOIN exercises e ON rd.exercise_id = e.id
         WHERE rd.routine_id = ?
@@ -360,8 +379,8 @@ def view_routine(routine_id):
     conn.close()
 
     routine_days = {}
-    for day_name, ex_name, sets, reps in rows:
-        routine_days.setdefault(day_name, []).append((ex_name, sets, reps))
+    for day_name, ex_id, ex_name, sets, reps in rows:
+        routine_days.setdefault(day_name, []).append((ex_id, ex_name, sets, reps))
 
     return render_template('view_routine.html', routine_name=routine[0], routine_days=routine_days)
 
@@ -402,6 +421,20 @@ def recommender():
 
     
     return render_template("recommender.html", recommendations=recommendations)
+
+
+@app.route("/start_workout", methods=["POST"])
+def start_workout():
+    if 'user' not in session:
+        return redirect('/login')
+
+    exercise_ids = request.form.getlist("exercise_ids")
+
+    # Store in session temporarily so /log_workout knows what to prefill
+    session['recommended_workout'] = exercise_ids
+
+    return redirect(url_for("log_workout"))
+
 
 
 #ADMIN_PAGES

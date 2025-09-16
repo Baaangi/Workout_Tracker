@@ -6,29 +6,51 @@
     </h2>
 
     {% for day, exercises in routine_days.items() %}
-        <div class="mb-4 rounded-4 shadow" style="background-color: #1e1e1e; border: 1px solid #333;">
-            <div class="px-4 py-3" style="
-                border-top: 4px solid var(--primary);
-                border-top-left-radius: 1rem;
-                border-top-right-radius: 1rem;
-                font-family: 'Bebas Neue';
-                font-size: 1.5rem;
-                color: white;
-                background-color: #1e1e1e;
-            ">
-                {{ day }}
-            </div>
-            <div class="px-4 py-3">
-                {% for name, sets, reps in exercises %}
-                    <div class="d-flex justify-content-between align-items-center py-2 border-bottom" style="border-color: #444;">
-                        <span style="font-family: 'Inter'; font-size: 1rem;">{{ name }}</span>
-                        <span style="font-size: 0.95rem; color: #aaa;">{{ sets }} sets × {{ reps }} reps</span>
-                    </div>
+    <div class="mb-4 rounded-4 shadow position-relative" style="background-color: #1e1e1e; border: 1px solid #333;">
+        <div class="px-4 py-3" style="
+            border-top: 4px solid var(--primary);
+            border-top-left-radius: 1rem;
+            border-top-right-radius: 1rem;
+            font-family: 'Bebas Neue';
+            font-size: 1.5rem;
+            color: white;
+            background-color: #1e1e1e;
+            position: relative;
+        ">
+            {{ day }}
+            <!-- Start This Workout button -->
+            <form action="{{ url_for('start_workout') }}" method="post" style="display:inline-block; float:right;">
+                {% for ex_id, ex_name, sets, reps in exercises %}
+                    <input type="hidden" name="exercise_ids" value="{{ ex_id }}">
                 {% endfor %}
-            </div>
+                <button type="submit" 
+                    style="
+                        background-color: orange; 
+                        color: black; 
+                        border: none; 
+                        padding: 6px 14px; 
+                        border-radius: 25px; 
+                        font-family: 'Inter'; 
+                        font-size: 0.9rem; 
+                        cursor: pointer; 
+                        transition: background-color 0.3s ease;
+                    " 
+                    onmouseover="this.style.backgroundColor='#ff9c33';" 
+                    onmouseout="this.style.backgroundColor='orange';">
+                    Start This Workout
+                </button>
+            </form>
         </div>
+        <div class="px-4 py-3">
+            {% for ex_id, name, sets, reps in exercises %}
+                <div class="d-flex justify-content-between align-items-center py-2 border-bottom" style="border-color: #444;">
+                    <span style="font-family: 'Inter'; font-size: 1rem;">{{ name }}</span>
+                    <span style="font-size: 0.95rem; color: #aaa;">{{ sets }} sets × {{ reps }} reps</span>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
     {% endfor %}
-
 
     <div class="text-center mt-4">
         <a href="{{ url_for('routine_results') }}" class="btn btn-outline-light px-4 py-2 rounded-pill" style="font-family: 'Inter';">

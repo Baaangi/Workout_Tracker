@@ -177,6 +177,14 @@
             .catch(err => alert("Error: " + err));
         });
 
+    const prefilledExercises = {{ prefilled|tojson }};
+
+        window.addEventListener("DOMContentLoaded", () => {
+            if (prefilledExercises.length > 0) {
+            prefilledExercises.forEach(name => selectExercise(name));
+            }
+        });
+
      </script>
 
      <style>
@@ -186,6 +194,8 @@
             color: #aaa; /* softer placeholder */
         }
     </style>
+
+
 
 
 {% endblock %}

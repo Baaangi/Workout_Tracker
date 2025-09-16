@@ -44,12 +44,45 @@
         {% endfor %}
     </div>
 
+<!-- Start Workout button (hidden initially) -->
+    <div id="startWorkoutDiv" style="display:none;">
+        <form action="{{ url_for('start_workout') }}" method="post">
+        {% for rec in recommendations %}
+            <input type="hidden" name="exercise_ids" value="{{ rec[0] }}">
+        {% endfor %}
+        <button type="submit"
+            style="background-color:#EE7828; color:black; border:none; padding:12px 30px; 
+                   font-family:'Bebas Neue', sans-serif; font-size:1.2rem; border-radius:50px;
+                   transition: background-color 0.3s ease;">Start This Workout</button>
+        </form>
+    </div>
+
     <div class="text-center mt-4">
         <a href="{{ url_for('dashboard') }}" class="btn btn-outline-light px-4 py-2 rounded-pill" style="font-family: 'Inter';">
             ← Back to Dashboard
         </a>
     </div>
 </div>
+
+
+<script>
+    const btn = document.querySelector('#startWorkoutDiv button');
+    btn.addEventListener('mouseenter', () => btn.style.backgroundColor = '#ffb347'); // slightly lighter orange
+    btn.addEventListener('mouseleave', () => btn.style.backgroundColor = 'orange');
+
+document.getElementById("generate-btn").addEventListener("click", function () {
+    document.getElementById("generate-section").style.display = "none";
+    document.getElementById("loading").style.display = "block";
+
+    setTimeout(() => {
+        document.getElementById("loading").style.display = "none";
+        document.getElementById("recommendations").style.display = "flex";
+        document.getElementById("startWorkoutDiv").style.display = "block"; // show button now
+    }, 3500);
+});
+</script>
+
+
 
 <!-- Custom Styles & Animations -->
 <style>
