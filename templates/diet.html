@@ -1,0 +1,329 @@
+{% extends "base.html" %}
+{% block content %}
+<style>
+    .nav-pills .nav-link.active {
+        background-color: var(--primary) !important;
+        color: white !important;
+    }
+    .nav-pills .nav-link {
+        color: #ccc;
+        font-weight: 500;
+        border-radius: 0.5rem;
+    }
+    .nav-pills .nav-link:hover {
+        color: var(--primary);
+    }
+</style>
+
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap">
+        <h2><i class="bi bi-egg-fried me-2" style="color: var(--primary);"></i>Diet & Nutrition Tracker</h2>
+        <span class="badge bg-dark border border-secondary px-3 py-2 fs-6">Date: {{ current_date }}</span>
+    </div>
+
+    {% if not has_profile %}
+    <!-- Warning message to complete metrics -->
+    <div class="card p-4 border border-warning text-center mb-4">
+        <div class="card-body">
+            <h4 class="text-warning mb-3"><i class="bi bi-exclamation-triangle animate-bounce"></i> Profile Incomplete</h4>
+            <p class="text-muted">You haven't configured your physical metrics profile. Please update your profile to calculate customized target calories and macronutrients.</p>
+            <a href="/profile" class="btn btn-primary mt-2">Manage Profile</a>
+        </div>
+    </div>
+    {% else %}
+    <!-- Macro Summary Cards -->
+    <div class="row mb-4">
+        <!-- Calories Ring / Progression -->
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card p-3 border border-secondary text-center h-100">
+                <small class="text-muted text-uppercase fw-bold">Calories</small>
+                <div class="my-3">
+                    <span class="fs-1 fw-bold text-white">{{ intake.calories }}</span>
+                    <span class="text-muted">/ {{ targets.calories }} kcal</span>
+                </div>
+                {% set cal_pct = (intake.calories / targets.calories * 100) | round | int %}
+                {% if cal_pct > 100 %}{% set cal_pct = 100 %}{% endif %}
+                <div class="progress" style="height: 10px; background-color: #333;">
+                    <div class="progress-bar bg-warning" role="progressbar" style="width: {{ cal_pct }}%;"></div>
+                </div>
+                <small class="text-muted mt-2">{{ targets.calories - intake.calories }} kcal remaining</small>
+            </div>
+        </div>
+
+        <!-- Protein Card -->
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card p-3 border border-secondary text-center h-100">
+                <small class="text-muted text-uppercase fw-bold" style="color: #2ec4b6 !important;">Protein</small>
+                <div class="my-3">
+                    <span class="fs-2 fw-bold text-white">{{ intake.protein }}g</span>
+                    <span class="text-muted">/ {{ targets.protein }}g</span>
+                </div>
+                {% set pro_pct = (intake.protein / targets.protein * 100) | round | int %}
+                {% if pro_pct > 100 %}{% set pro_pct = 100 %}{% endif %}
+                <div class="progress" style="height: 8px; background-color: #333;">
+                    <div class="progress-bar" role="progressbar" style="width: {{ pro_pct }}%; background-color: #2ec4b6;"></div>
+                </div>
+                <small class="text-muted mt-2">{{ (targets.protein - intake.protein) | round(1) }}g remaining</small>
+            </div>
+        </div>
+
+        <!-- Carbs Card -->
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card p-3 border border-secondary text-center h-100">
+                <small class="text-muted text-uppercase fw-bold" style="color: #4361ee !important;">Carbohydrates</small>
+                <div class="my-3">
+                    <span class="fs-2 fw-bold text-white">{{ intake.carbs }}g</span>
+                    <span class="text-muted">/ {{ targets.carbs }}g</span>
+                </div>
+                {% set carb_pct = (intake.carbs / targets.carbs * 100) | round | int %}
+                {% if carb_pct > 100 %}{% set carb_pct = 100 %}{% endif %}
+                <div class="progress" style="height: 8px; background-color: #333;">
+                    <div class="progress-bar bg-primary" role="progressbar" style="width: {{ carb_pct }}%;"></div>
+                </div>
+                <small class="text-muted mt-2">{{ (targets.carbs - intake.carbs) | round(1) }}g remaining</small>
+            </div>
+        </div>
+
+        <!-- Fats Card -->
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card p-3 border border-secondary text-center h-100">
+                <small class="text-muted text-uppercase fw-bold" style="color: #f72585 !important;">Fats</small>
+                <div class="my-3">
+                    <span class="fs-2 fw-bold text-white">{{ intake.fat }}g</span>
+                    <span class="text-muted">/ {{ targets.fat }}g</span>
+                </div>
+                {% set fat_pct = (intake.fat / targets.fat * 100) | round | int %}
+                {% if fat_pct > 100 %}{% set fat_pct = 100 %}{% endif %}
+                <div class="progress" style="height: 8px; background-color: #333;">
+                    <div class="progress-bar" role="progressbar" style="width: {{ fat_pct }}%; background-color: #f72585;"></div>
+                </div>
+                <small class="text-muted mt-2">{{ (targets.fat - intake.fat) | round(1) }}g remaining</small>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="row">
+        <!-- Log Meal Form Container -->
+        <div class="col-md-5 mb-4">
+            <div class="card p-4 border border-secondary h-100" style="background-color: var(--light-dark);">
+                <h4 class="mb-3" style="color: var(--primary);">Log a Meal</h4>
+
+                <!-- Tabs to choose Preloaded vs Custom -->
+                <ul class="nav nav-pills mb-3" id="pills-tab" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="pills-preloaded-tab" data-bs-toggle="pill" data-bs-target="#pills-preloaded" type="button" role="tab" aria-controls="pills-preloaded" aria-selected="true">Preloaded Foods</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="pills-custom-tab" data-bs-toggle="pill" data-bs-target="#pills-custom" type="button" role="tab" aria-controls="pills-custom" aria-selected="false">Custom Meal</button>
+                    </li>
+                </ul>
+
+                <div class="tab-content" id="pills-tabContent">
+                    <!-- Tab 1: Preloaded Foods -->
+                    <div class="tab-pane fade show active" id="pills-preloaded" role="tabpanel" aria-labelledby="pills-preloaded-tab">
+                        <form action="/diet/add_preloaded" method="post">
+                            <div class="mb-3">
+                                <label for="foodSelect" class="form-label text-muted small">Select Food Item:</label>
+                                <select class="form-control" name="food_id" id="foodSelect" required>
+                                    <option value="" disabled selected>Choose a preloaded food...</option>
+                                    {% for food in preloaded_foods %}
+                                    <option value="{{ food.id }}">{{ food.name }} (per {{ food.serving_size }}{{ food.serving_unit }})</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="quantityInput" class="form-label text-muted small">Quantity/Serving Amount:</label>
+                                <div class="input-group">
+                                    <input type="number" step="0.1" class="form-control" name="quantity" id="quantityInput" placeholder="Select food first" required disabled>
+                                    <span class="input-group-text" id="unitLabel" style="background-color: #333; color: #fff; border-color: #555;">g</span>
+                                </div>
+                            </div>
+
+                            <!-- Interactive Macros Preview Card -->
+                            <div class="card p-3 mb-3 border border-secondary bg-dark" id="previewCard" style="display: none;">
+                                <h6 class="text-uppercase fw-bold text-muted small mb-2"><i class="bi bi-eye-fill me-1" style="color: var(--primary);"></i>Macros Preview</h6>
+                                <div class="row text-center text-white">
+                                    <div class="col-3">
+                                        <div class="fw-bold text-warning" id="previewCal">0</div>
+                                        <small class="text-muted" style="font-size: 0.65rem; display: block;">Calories</small>
+                                    </div>
+                                    <div class="col-3">
+                                        <div class="fw-bold text-info" id="previewPro">0g</div>
+                                        <small class="text-muted" style="font-size: 0.65rem; display: block;">Protein</small>
+                                    </div>
+                                    <div class="col-3">
+                                        <div class="fw-bold text-primary" id="previewCarb">0g</div>
+                                        <small class="text-muted" style="font-size: 0.65rem; display: block;">Carbs</small>
+                                    </div>
+                                    <div class="col-3">
+                                        <div class="fw-bold" style="color: #f72585;" id="previewFat">0g</div>
+                                        <small class="text-muted" style="font-size: 0.65rem; display: block;">Fats</small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary w-100" id="logPreloadedBtn" disabled>Log Preloaded Food</button>
+                        </form>
+                    </div>
+
+                    <!-- Tab 2: Custom Food -->
+                    <div class="tab-pane fade" id="pills-custom" role="tabpanel" aria-labelledby="pills-custom-tab">
+                        <form action="/diet/add" method="post">
+                            <div class="mb-3">
+                                <label for="food_name" class="form-label text-muted small">Food/Meal Name:</label>
+                                <input type="text" class="form-control" name="food_name" placeholder="e.g. Oatmeal, Chicken breast" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="calories" class="form-label text-muted small">Calories (kcal):</label>
+                                <input type="number" class="form-control" name="calories" placeholder="e.g. 350" required>
+                            </div>
+                            
+                            <hr class="my-3" style="border-top: 1px dashed var(--grey);">
+                            <p class="text-muted small mb-2">Optional Macros Details:</p>
+                            
+                            <div class="row">
+                                <div class="col-4 mb-3">
+                                    <label for="protein" class="form-label small text-muted">Protein (g):</label>
+                                    <input type="number" step="0.1" class="form-control form-control-sm" name="protein" placeholder="0">
+                                </div>
+                                <div class="col-4 mb-3">
+                                    <label for="carbs" class="form-label small text-muted">Carbs (g):</label>
+                                    <input type="number" step="0.1" class="form-control form-control-sm" name="carbs" placeholder="0">
+                                </div>
+                                <div class="col-4 mb-3">
+                                    <label for="fat" class="form-label small text-muted">Fat (g):</label>
+                                    <input type="number" step="0.1" class="form-control form-control-sm" name="fat" placeholder="0">
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary w-100 mt-2">Add Custom Meal Log</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Logged Meals List -->
+        <div class="col-md-7 mb-4">
+            <div class="card p-4 border border-secondary h-100" style="background-color: var(--light-dark);">
+                <h4 class="mb-3" style="color: var(--primary);">Today's Logged Meals</h4>
+                
+                {% if not meals %}
+                <div class="text-center py-5">
+                    <i class="bi bi-basket text-muted" style="font-size: 3rem;"></i>
+                    <p class="text-muted mt-2">No meals logged for today yet.</p>
+                </div>
+                {% else %}
+                <div class="table-responsive">
+                    <table class="table table-dark table-hover align-middle">
+                        <thead>
+                            <tr style="border-bottom: 2px solid var(--grey);">
+                                <th>Food Item</th>
+                                <th class="text-center">Calories</th>
+                                <th class="text-center">P</th>
+                                <th class="text-center">C</th>
+                                <th class="text-center">F</th>
+                                <th class="text-end">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for meal in meals %}
+                            <tr>
+                                <td><strong>{{ meal[1] }}</strong></td>
+                                <td class="text-center text-warning">{{ meal[2] }} kcal</td>
+                                <td class="text-center text-info">{{ meal[3] }}g</td>
+                                <td class="text-center text-primary">{{ meal[4] }}g</td>
+                                <td class="text-center" style="color: #f72585;">{{ meal[5] }}g</td>
+                                <td class="text-end">
+                                    <form action="/diet/delete/{{ meal[0] }}" method="post" onsubmit="return confirm('Are you sure you want to delete this log?');">
+                                        <button type="submit" class="btn btn-outline-danger btn-sm px-2 py-1" title="Delete Meal">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Real-time Preview Script -->
+<script>
+    // Injected food database from python context
+    const preloadedFoods = {{ preloaded_foods | tojson | safe }};
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        const select = document.getElementById('foodSelect');
+        const quantity = document.getElementById('quantityInput');
+        const unitLabel = document.getElementById('unitLabel');
+        const previewCard = document.getElementById('previewCard');
+        const logBtn = document.getElementById('logPreloadedBtn');
+        
+        const previewCal = document.getElementById('previewCal');
+        const previewPro = document.getElementById('previewPro');
+        const previewCarb = document.getElementById('previewCarb');
+        const previewFat = document.getElementById('previewFat');
+        
+        let selectedFood = null;
+        
+        select.addEventListener('change', function() {
+            const foodId = parseInt(select.value);
+            selectedFood = preloadedFoods.find(f => f.id === foodId);
+            
+            if (selectedFood) {
+                unitLabel.textContent = selectedFood.serving_unit;
+                quantity.placeholder = `e.g. ${selectedFood.serving_size}`;
+                quantity.disabled = false;
+                logBtn.disabled = false;
+                
+                // Prefill with the default baseline serving size
+                if (!quantity.value || quantity.value == 0) {
+                    quantity.value = selectedFood.serving_size;
+                }
+                updatePreview();
+            } else {
+                quantity.disabled = true;
+                quantity.value = "";
+                logBtn.disabled = true;
+                previewCard.style.display = 'none';
+            }
+        });
+        
+        quantity.addEventListener('input', updatePreview);
+        
+        function updatePreview() {
+            if (!selectedFood || !quantity.value) {
+                previewCard.style.display = 'none';
+                return;
+            }
+            
+            const q = parseFloat(quantity.value);
+            if (isNaN(q) || q <= 0) {
+                previewCard.style.display = 'none';
+                return;
+            }
+            
+            // Calculate scaled macro preview stats
+            const ratio = q / selectedFood.serving_size;
+            const calories = Math.round(selectedFood.calories * ratio);
+            const protein = (selectedFood.protein * ratio).toFixed(1);
+            const carbs = (selectedFood.carbs * ratio).toFixed(1);
+            const fat = (selectedFood.fat * ratio).toFixed(1);
+            
+            previewCal.textContent = calories;
+            previewPro.textContent = protein + 'g';
+            previewCarb.textContent = carbs + 'g';
+            previewFat.textContent = fat + 'g';
+            
+            previewCard.style.display = 'block';
+        }
+    });
+</script>
+{% endblock %}

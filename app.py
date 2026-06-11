@@ -44,6 +44,22 @@ def init_db():
         )
     ''')
     
+    # Safely alter table to add columns for user metrics (handles existing DB structures)
+    columns_to_add = [
+        ("age", "INTEGER"),
+        ("gender", "TEXT"),
+        ("weight", "REAL"),
+        ("height", "REAL"),
+        ("activity_level", "TEXT"),
+        ("goal", "TEXT")
+    ]
+    for col_name, col_type in columns_to_add:
+        try:
+            c.execute(f"ALTER TABLE users ADD COLUMN {col_name} {col_type}")
+        except sqlite3.OperationalError:
+            # Column already exists
+            pass
+    
     c.execute('''
         CREATE TABLE IF NOT EXISTS exercises (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -68,8 +84,41 @@ def init_db():
             FOREIGN KEY (exercise_id) REFERENCES exercises(id)
         )
     ''')
+
+    # Create daily_meals table for log diet records
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS daily_meals (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            date TEXT NOT NULL,
+            food_name TEXT NOT NULL,
+            calories INTEGER NOT NULL,
+            protein REAL DEFAULT 0,
+            carbs REAL DEFAULT 0,
+            fat REAL DEFAULT 0,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        )
+    ''')
+
+        # Create foods table for preloaded food options
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS foods (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT UNIQUE NOT NULL,
+            serving_size REAL DEFAULT 100.0,
+            serving_unit TEXT DEFAULT 'g',
+            calories INTEGER NOT NULL,
+            protein REAL DEFAULT 0.0,
+            carbs REAL DEFAULT 0.0,
+            fat REAL DEFAULT 0.0
+        )
+    ''')
     conn.commit()
     conn.close()
+
+# Initialize DB at import time so it runs under 'flask run'
+init_db()
+
 
 
 @app.route('/')
@@ -81,13 +130,24 @@ def register():
     if request.method == 'POST':
         username = request.form['username']
         password = generate_password_hash(request.form['password'])
+        
+        # Read profile metric fields
+        age = request.form.get('age')
+        gender = request.form.get('gender')
+        weight = request.form.get('weight')
+        height = request.form.get('height')
+        activity_level = request.form.get('activity_level')
+        goal = request.form.get('goal')
 
         try:
             conn = sqlite3.connect('workout_tracker.db')
             c = conn.cursor()
-            c.execute("INSERT INTO users (username, password) VALUES (?, ?)", (username, password))
+            c.execute("""
+                INSERT INTO users (username, password, age, gender, weight, height, activity_level, goal)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """, (username, password, age, gender, weight, height, activity_level, goal))
             conn.commit()
-            flash("Registration succesful. Please log in.", "success")
+            flash("Registration successful. Please log in.", "success")
             return redirect("/login")
         except sqlite3.IntegrityError:
             flash("Username already taken", "error")
@@ -95,6 +155,7 @@ def register():
             conn.close()
 
     return render_template('register.html')
+
 
 @app.route('/login', methods = ['GET', 'POST'])
 def login():
@@ -434,6 +495,344 @@ def start_workout():
     session['recommended_workout'] = exercise_ids
 
     return redirect(url_for("log_workout"))
+
+
+@app.route('/profile', methods=['GET', 'POST'])
+def profile():
+    if 'user' not in session:
+        return redirect('/login')
+
+    user_id = session['user_id']
+    conn = sqlite3.connect('workout_tracker.db')
+    c = conn.cursor()
+
+    if request.method == 'POST':
+        age = request.form.get('age')
+        gender = request.form.get('gender')
+        weight = request.form.get('weight')
+        height = request.form.get('height')
+        activity_level = request.form.get('activity_level')
+        goal = request.form.get('goal')
+
+        c.execute("""
+            UPDATE users
+            SET age=?, gender=?, weight=?, height=?, activity_level=?, goal=?
+            WHERE id=?
+        """, (age, gender, weight, height, activity_level, goal, user_id))
+        conn.commit()
+        flash("Profile updated successfully!", "success")
+        conn.close()
+        return redirect('/profile')
+
+    c.execute("SELECT age, gender, weight, height, activity_level, goal FROM users WHERE id = ?", (user_id,))
+    user_data = c.fetchone()
+    conn.close()
+
+    profile_data = {
+        'age': user_data[0] if user_data else None,
+        'gender': user_data[1] if user_data else None,
+        'weight': user_data[2] if user_data else None,
+        'height': user_data[3] if user_data else None,
+        'activity_level': user_data[4] if user_data else None,
+        'goal': user_data[5] if user_data else None
+    }
+
+    return render_template('profile.html', profile=profile_data)
+
+
+def calculate_targets(weight, height, age, gender, activity_level, goal):
+    """
+    Calculates Recommended Daily Calories and Macros based on Mifflin-St Jeor Equation
+    """
+    # Basal Metabolic Rate (BMR)
+    if gender == 'male':
+        bmr = 10 * weight + 6.25 * height - 5 * age + 5
+    else:
+        bmr = 10 * weight + 6.25 * height - 5 * age - 161
+        
+    # Activity Level Multipliers
+    multipliers = {
+        'sedentary': 1.2,
+        'lightly': 1.375,
+        'moderately': 1.55,
+        'very': 1.725,
+        'extra': 1.9
+    }
+    multiplier = multipliers.get(activity_level, 1.2)
+    
+    # Total Daily Energy Expenditure (TDEE)
+    tdee = bmr * multiplier
+    
+    # Adjust target based on goals
+    if goal == 'lose':
+        target_calories = int(tdee - 500)
+    elif goal == 'gain':
+        target_calories = int(tdee + 500)
+    else: # maintain
+        target_calories = int(tdee)
+        
+    # Macros calculations:
+    # 1. Protein: 2.0 grams per kg of bodyweight (fit for training/muscle retention)
+    protein_g = round(2.0 * weight, 1)
+    protein_kcal = protein_g * 4
+    
+    # 2. Fat: 25% of target calories
+    fat_kcal = target_calories * 0.25
+    fat_g = round(fat_kcal / 9, 1)
+    
+    # 3. Carbs: Remaining calories
+    carbs_kcal = max(0, target_calories - (protein_kcal + fat_kcal))
+    carbs_g = round(carbs_kcal / 4, 1)
+    
+    return {
+        'calories': max(1200, target_calories),  # Floor target at safe minimum of 1200
+        'protein': protein_g,
+        'carbs': carbs_g,
+        'fat': fat_g
+    }
+
+
+@app.route('/diet')
+def diet():
+    if 'user' not in session:
+        return redirect('/login')
+        
+    user_id = session['user_id']
+    today_str = datetime.now().strftime("%Y-%m-%d")
+    
+    conn = sqlite3.connect('workout_tracker.db')
+    c = conn.cursor()
+    
+    # 1. Get user profile metrics
+    c.execute("SELECT age, gender, weight, height, activity_level, goal FROM users WHERE id = ?", (user_id,))
+    user_data = c.fetchone()
+    
+    has_profile = False
+    targets = None
+    if user_data and all(x is not None for x in user_data):
+        has_profile = True
+        targets = calculate_targets(
+            weight=user_data[2],
+            height=user_data[3],
+            age=user_data[0],
+            gender=user_data[1],
+            activity_level=user_data[4],
+            goal=user_data[5]
+        )
+        
+    # 2. Get logged meals for today
+    c.execute("""
+        SELECT id, food_name, calories, protein, carbs, fat 
+        FROM daily_meals 
+        WHERE user_id = ? AND date = ?
+    """, (user_id, today_str))
+    meals = c.fetchall()
+
+    # 2b. Get preloaded foods from database
+    c.execute("SELECT id, name, serving_size, serving_unit, calories, protein, carbs, fat FROM foods ORDER BY name")
+    foods_rows = c.fetchall()
+    conn.close()
+
+    preloaded_foods = []
+    for f in foods_rows:
+        preloaded_foods.append({
+            'id': f[0],
+            'name': f[1],
+            'serving_size': f[2],
+            'serving_unit': f[3],
+            'calories': f[4],
+            'protein': f[5],
+            'carbs': f[6],
+            'fat': f[7]
+        })
+    
+    # 3. Sum current daily intake
+    intake = {
+        'calories': sum(m[2] for m in meals),
+        'protein': round(sum(m[3] for m in meals), 1),
+        'carbs': round(sum(m[4] for m in meals), 1),
+        'fat': round(sum(m[5] for m in meals), 1)
+    }
+    
+    return render_template(
+        'diet.html',
+        has_profile=has_profile,
+        targets=targets,
+        meals=meals,
+        intake=intake,
+        current_date=today_str,
+        preloaded_foods=preloaded_foods
+    )
+
+
+
+@app.route('/diet/add', methods=['POST'])
+def add_meal():
+    if 'user' not in session:
+        return redirect('/login')
+        
+    user_id = session['user_id']
+    today_str = datetime.now().strftime("%Y-%m-%d")
+    
+    food_name = request.form.get('food_name')
+    calories = request.form.get('calories')
+    protein = request.form.get('protein', 0)
+    carbs = request.form.get('carbs', 0)
+    fat = request.form.get('fat', 0)
+    
+    # Provide fallbacks if macros left empty
+    protein = float(protein) if protein else 0.0
+    carbs = float(carbs) if carbs else 0.0
+    fat = float(fat) if fat else 0.0
+    
+    if food_name and calories:
+        conn = sqlite3.connect('workout_tracker.db')
+        c = conn.cursor()
+        c.execute("""
+            INSERT INTO daily_meals (user_id, date, food_name, calories, protein, carbs, fat)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        """, (user_id, today_str, food_name, int(calories), protein, carbs, fat))
+        conn.commit()
+        conn.close()
+        flash("Meal logged successfully!", "success")
+    else:
+        flash("Food Name and Calories are required.", "danger")
+        
+    return redirect('/diet')
+
+
+@app.route('/diet/add_preloaded', methods=['POST'])
+def add_preloaded():
+    if 'user' not in session:
+        return redirect('/login')
+        
+    user_id = session['user_id']
+    today_str = datetime.now().strftime("%Y-%m-%d")
+    
+    food_id = request.form.get('food_id')
+    quantity = request.form.get('quantity')
+    
+    if not food_id or not quantity:
+        flash("Please select a food and enter a quantity.", "danger")
+        return redirect('/diet')
+        
+    try:
+        quantity = float(quantity)
+    except ValueError:
+        flash("Invalid quantity entered.", "danger")
+        return redirect('/diet')
+        
+    conn = sqlite3.connect('workout_tracker.db')
+    c = conn.cursor()
+    
+    # Fetch preloaded food details
+    c.execute("SELECT name, serving_size, serving_unit, calories, protein, carbs, fat FROM foods WHERE id = ?", (food_id,))
+    food = c.fetchone()
+    
+    if not food:
+        conn.close()
+        flash("Food item not found.", "danger")
+        return redirect('/diet')
+        
+    food_name, serving_size, serving_unit, calories, protein, carbs, fat = food
+    
+    # Scale calculations based on ratio of quantity to baseline serving_size
+    ratio = quantity / serving_size
+    scaled_calories = int(calories * ratio)
+    scaled_protein = round(protein * ratio, 1)
+    scaled_carbs = round(carbs * ratio, 1)
+    scaled_fat = round(fat * ratio, 1)
+    
+    # Construct descriptive name: e.g. "Chicken Breast (150g)"
+    if quantity.is_integer():
+        logged_name = f"{food_name} ({int(quantity)}{serving_unit})"
+    else:
+        logged_name = f"{food_name} ({quantity:.1f}{serving_unit})"
+        
+    c.execute("""
+        INSERT INTO daily_meals (user_id, date, food_name, calories, protein, carbs, fat)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    """, (user_id, today_str, logged_name, scaled_calories, scaled_protein, scaled_carbs, scaled_fat))
+    
+    conn.commit()
+    conn.close()
+    
+    flash(f"Logged {logged_name} successfully!", "success")
+    return redirect('/diet')
+
+
+
+@app.route('/diet/delete/<int:meal_id>', methods=['POST'])
+def delete_meal(meal_id):
+    if 'user' not in session:
+        return redirect('/login')
+        
+    user_id = session['user_id']
+    
+    conn = sqlite3.connect('workout_tracker.db')
+    c = conn.cursor()
+    # Ensure user owns the meal log
+    c.execute("DELETE FROM daily_meals WHERE id = ? AND user_id = ?", (meal_id, user_id))
+    conn.commit()
+    conn.close()
+    
+    flash("Meal entry deleted.", "success")
+    return redirect('/diet')
+
+
+@app.route('/admin/foods', methods=['GET', 'POST'])
+@admin_required
+def admin_foods():
+    if request.method == 'POST':
+        name = request.form.get('name')
+        serving_size = request.form.get('serving_size', 100.0)
+        serving_unit = request.form.get('serving_unit', 'g')
+        calories = request.form.get('calories')
+        protein = request.form.get('protein', 0.0)
+        carbs = request.form.get('carbs', 0.0)
+        fat = request.form.get('fat', 0.0)
+
+        # Sanitize and convert inputs
+        serving_size = float(serving_size) if serving_size else 100.0
+        calories = int(calories) if calories else 0
+        protein = float(protein) if protein else 0.0
+        carbs = float(carbs) if carbs else 0.0
+        fat = float(fat) if fat else 0.0
+
+        if not name or not calories:
+            flash('Food Name and Calories are required', 'danger')
+        else:
+            conn = sqlite3.connect('workout_tracker.db')
+            try:
+                conn.execute("""
+                    INSERT INTO foods (name, serving_size, serving_unit, calories, protein, carbs, fat)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                """, (name, serving_size, serving_unit, calories, protein, carbs, fat))
+                conn.commit()
+                flash('Food item added successfully!', 'success')
+            except sqlite3.IntegrityError:
+                flash('Food item name must be unique', 'danger')
+            finally:
+                conn.close()
+
+    conn = sqlite3.connect('workout_tracker.db')
+    c = conn.cursor()
+    c.execute('SELECT * FROM foods ORDER BY name')
+    foods = c.fetchall()
+    conn.close()
+    return render_template("admin/foods.html", foods=foods)
+
+
+@app.route('/admin/delete_food/<int:food_id>', methods=['POST', 'GET'])
+@admin_required
+def delete_food(food_id):
+    conn = sqlite3.connect('workout_tracker.db')
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM foods WHERE id = ?", (food_id,))
+    conn.commit()
+    conn.close()
+    flash("Food item deleted successfully!", "success")
+    return redirect('/admin/foods')
 
 
 

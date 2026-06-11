@@ -1,21 +1,73 @@
 {% extends "base.html" %}
 {% block content %}
 
-    <div class="d-flex justify-content-center align-items-center" style="min-height: 90vh;">
-        <div class="form-container">
+    <div class="d-flex justify-content-center align-items-center my-5" style="min-height: 90vh;">
+        <div class="form-container" style="max-width: 500px;">
             <h3 class="text-center mb-4">REGISTER</h3>
             <form method="post">
                 <div class="mb-3">
-                        <label for="username" class="form-label">Username:</label>
-                        <input type="text" class="form-control" name="username" placeholder="Enter Username" required><br>
+                    <label for="username" class="form-label">Username:</label>
+                    <input type="text" class="form-control" name="username" placeholder="Enter Username" required>
                 </div>
                 <div class="mb-3">
-                        <label for="password" class="form-label">Password:</label>
-                        <input type="text" class="form-control" name="password" placeholder="Enter Password" required><br>
+                    <label for="password" class="form-label">Password:</label>
+                    <input type="password" class="form-control" name="password" placeholder="Enter Password" required>
                 </div>
+
+                <hr class="my-4" style="border-top: 1px solid var(--grey);">
+                <h5 class="text-center mb-3" style="color: var(--primary);">Physical Profile Metrics</h5>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="age" class="form-label">Age:</label>
+                        <input type="number" class="form-control" name="age" placeholder="Age" min="1" max="120" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="gender" class="form-label">Gender:</label>
+                        <select class="form-control" name="gender" required>
+                            <option value="" disabled selected>Select Gender</option>
+                            <option value="male">Male</option>
+                            <option value="female">Female</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="weight" class="form-label">Weight (kg):</label>
+                        <input type="number" step="0.1" class="form-control" name="weight" placeholder="Weight (kg)" min="10" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="height" class="form-label">Height (cm):</label>
+                        <input type="number" step="0.1" class="form-control" name="height" placeholder="Height (cm)" min="50" required>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="activity_level" class="form-label">Activity Level:</label>
+                    <select class="form-control" name="activity_level" required>
+                        <option value="" disabled selected>Select Activity Level</option>
+                        <option value="sedentary">Sedentary (Little/no exercise)</option>
+                        <option value="lightly">Lightly Active (1-3 days/week)</option>
+                        <option value="moderately">Moderately Active (3-5 days/week)</option>
+                        <option value="very">Very Active (6-7 days/week)</option>
+                        <option value="extra">Extra Active (Hard exercise/physical job)</option>
+                    </select>
+                </div>
+
+                <div class="mb-4">
+                    <label for="goal" class="form-label">Goal:</label>
+                    <select class="form-control" name="goal" required>
+                        <option value="" disabled selected>Select Fitness Goal</option>
+                        <option value="lose">Lose Weight (Calorie Deficit)</option>
+                        <option value="maintain">Maintain Weight</option>
+                        <option value="gain">Gain Weight (Calorie Surplus)</option>
+                    </select>
+                </div>
+
                 <button type="submit" class="btn btn-primary w-100">Register</button>
-                </form>
-                <p class="text-center mt-3 text-muted">Already have an account? <a href="/login">Login</a></p>
+            </form>
+            <p class="text-center mt-3 text-muted">Already have an account? <a href="/login">Login</a></p>
         </div>
     </div>
 {% endblock %}

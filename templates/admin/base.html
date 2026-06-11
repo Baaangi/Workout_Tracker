@@ -49,11 +49,13 @@
                 <a href="/admin" class="nav-link {% if request.path == '/admin' %}active{% endif %}">Dashboard</a>
                 <a href="/admin/users" class="nav-link {% if request.path.startswith('/admin/users') %}active{% endif %}">Manage Users</a>
                 <a href="/admin/exercises" class="nav-link {% if request.path.startswith('/admin/exercises') %}active{% endif %}">Manage Exercises</a>
+                <a href="/admin/foods" class="nav-link {% if request.path.startswith('/admin/foods') %}active{% endif %}">Manage Foods</a>
                 <a href="/admin/logs" class="nav-link {% if request.path.startswith('/admin/logs') %}active{% endif %}">Workout Logs</a>
                 <div class="border-top my-2"></div>
                 <a href="/dashboard" class="nav-link">Back to User Dashboard</a>
                 <a href="/logout" class="nav-link text-danger">Logout</a>
             </nav>
+
         </aside>
 
         <!-- Main content -->

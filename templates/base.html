@@ -28,18 +28,18 @@
           <span class="navbar-toggler-icon text-white"></span>
         </button>
         <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
-          <ul class="navbar-nav ms-auto">
-            <li class="nav-item"></li>
+                    <ul class="navbar-nav ms-auto">
+            <li class="nav-item">
               <a class="nav-link text-white" href="/history">
                 <i class="bi bi-journal-text me-1" style="color: var(--primary);"></i> History
               </a>
             </li>
-            <li class="nav-item"></li>
+            <li class="nav-item">
               <a class="nav-link text-white" href="/log_workout">
-                <i class="fas fa-dumbbell" style="color: var(--primary);"></i> Log Workouts
+                <i class="fas fa-dumbbell me-1" style="color: var(--primary);"></i> Log Workouts
               </a>
             </li>
-            <li class="nav-item"></li>
+            <li class="nav-item">
               <a class="nav-link text-white" href="/analytics">
                 <i class="bi bi-graph-up-arrow me-1" style="color: var(--primary);"></i> Analytics
               </a>
@@ -49,19 +49,26 @@
                 <i class="bi bi-lightbulb me-1" style="color: var(--primary);"></i> Workout Routines
               </a>
             </li>
-
-            <li class="nav-item"></li>
-              <a class="nav-link text-white" href="{{ url_for('recommender') }}">
-                <i class="bi bi-sliders" style="color: var(--primary);"></i> Recommendations
+            <li class="nav-item">
+              <a class="nav-link text-white" href="/diet">
+                <i class="bi bi-egg-fried me-1" style="color: var(--primary);"></i> Diet Tracker
               </a>
             </li>
-
+            <li class="nav-item">
+              <a class="nav-link text-white" href="{{ url_for('recommender') }}">
+                <i class="bi bi-sliders me-1" style="color: var(--primary);"></i> Recommendations
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link text-white" href="/profile">
+                <i class="bi bi-person me-1" style="color: var(--primary);"></i> Profile
+              </a>
+            </li>
             <li class="nav-item">
               <a class="nav-link text-white" href="/logout">
                 <i class="bi bi-box-arrow-right me-1" style="color: var(--primary);"></i> Logout
               </a>
             </li>
-
           </ul>
         </div>
       </div>

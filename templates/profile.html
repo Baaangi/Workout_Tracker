@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container py-5">
+    <div class="d-flex justify-content-center align-items-center" style="min-height: 80vh;">
+        <div class="form-container" style="max-width: 600px; width: 100%;">
+            <h3 class="text-center mb-4">
+                <i class="bi bi-person-fill me-2" style="color: var(--primary);"></i>Manage Profile
+            </h3>
+            <p class="text-center text-muted mb-4">Keep your physical metrics updated to ensure accurate calorie and macronutrient calculations.</p>
+            
+            <form method="post">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="age" class="form-label">Age:</label>
+                        <input type="number" class="form-control" name="age" value="{{ profile.age or '' }}" min="1" max="120" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="gender" class="form-label">Gender:</label>
+                        <select class="form-control" name="gender" required>
+                            <option value="" disabled {% if not profile.gender %}selected{% endif %}>Select Gender</option>
+                            <option value="male" {% if profile.gender == 'male' %}selected{% endif %}>Male</option>
+                            <option value="female" {% if profile.gender == 'female' %}selected{% endif %}>Female</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="weight" class="form-label">Weight (kg):</label>
+                        <input type="number" step="0.1" class="form-control" name="weight" value="{{ profile.weight or '' }}" min="10" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="height" class="form-label">Height (cm):</label>
+                        <input type="number" step="0.1" class="form-control" name="height" value="{{ profile.height or '' }}" min="50" required>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="activity_level" class="form-label">Activity Level:</label>
+                    <select class="form-control" name="activity_level" required>
+                        <option value="" disabled {% if not profile.activity_level %}selected{% endif %}>Select Activity Level</option>
+                        <option value="sedentary" {% if profile.activity_level == 'sedentary' %}selected{% endif %}>Sedentary (Little/no exercise)</option>
+                        <option value="lightly" {% if profile.activity_level == 'lightly' %}selected{% endif %}>Lightly Active (1-3 days/week)</option>
+                        <option value="moderately" {% if profile.activity_level == 'moderately' %}selected{% endif %}>Moderately Active (3-5 days/week)</option>
+                        <option value="very" {% if profile.activity_level == 'very' %}selected{% endif %}>Very Active (6-7 days/week)</option>
+                        <option value="extra" {% if profile.activity_level == 'extra' %}selected{% endif %}>Extra Active (Hard exercise/physical job)</option>
+                    </select>
+                </div>
+
+                <div class="mb-4">
+                    <label for="goal" class="form-label">Goal:</label>
+                    <select class="form-control" name="goal" required>
+                        <option value="" disabled {% if not profile.goal %}selected{% endif %}>Select Fitness Goal</option>
+                        <option value="lose" {% if profile.goal == 'lose' %}selected{% endif %}>Lose Weight (Calorie Deficit)</option>
+                        <option value="maintain" {% if profile.goal == 'maintain' %}selected{% endif %}>Maintain Weight</option>
+                        <option value="gain" {% if profile.goal == 'gain' %}selected{% endif %}>Gain Weight (Calorie Surplus)</option>
+                    </select>
+                </div>
+
+                <div class="d-flex justify-content-between gap-3">
+                    <a href="/diet" class="btn btn-outline-secondary w-50 d-flex justify-content-center align-items-center" style="border-radius: 1rem; color: #fff;">Back to Diet</a>
+                    <button type="submit" class="btn btn-primary w-50">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
