@@ -36,6 +36,8 @@ app.jinja_env.auto_reload = True
 def init_db():
     conn = sqlite3.connect('workout_tracker.db')
     c = conn.cursor()
+    
+    # 1. Standard tables
     c.execute('''
         CREATE TABLE IF NOT EXISTS users (
               id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -44,7 +46,7 @@ def init_db():
         )
     ''')
     
-    # Safely alter table to add columns for user metrics (handles existing DB structures)
+    # Safely alter table to add columns for user metrics
     columns_to_add = [
         ("age", "INTEGER"),
         ("gender", "TEXT"),
@@ -57,7 +59,6 @@ def init_db():
         try:
             c.execute(f"ALTER TABLE users ADD COLUMN {col_name} {col_type}")
         except sqlite3.OperationalError:
-            # Column already exists
             pass
     
     c.execute('''
@@ -85,7 +86,6 @@ def init_db():
         )
     ''')
 
-    # Create daily_meals table for log diet records
     c.execute('''
         CREATE TABLE IF NOT EXISTS daily_meals (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -100,7 +100,6 @@ def init_db():
         )
     ''')
 
-        # Create foods table for preloaded food options
     c.execute('''
         CREATE TABLE IF NOT EXISTS foods (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -113,11 +112,53 @@ def init_db():
             fat REAL DEFAULT 0.0
         )
     ''')
+
+    # Create workout_routines and routine_days tables
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS workout_routines (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            level TEXT NOT NULL,
+            days_per_week INTEGER NOT NULL,
+            description TEXT
+        )
+    ''')
+
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS routine_days (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            routine_id INTEGER NOT NULL,
+            day_name TEXT NOT NULL,
+            exercise_id INTEGER NOT NULL,
+            sets INTEGER NOT NULL,
+            reps TEXT NOT NULL,
+            FOREIGN KEY (routine_id) REFERENCES workout_routines(id),
+            FOREIGN KEY (exercise_id) REFERENCES exercises(id)
+        )
+    ''')
     conn.commit()
+
+    # 2. Check if exercises table is empty. If yes, seed database using seed.sql
+    c.execute("SELECT COUNT(*) FROM exercises")
+    is_empty = c.fetchone()[0] == 0
+    
+    if is_empty:
+        import os
+        if os.path.exists('seed.sql'):
+            print("Seeding database with preloaded exercises, routines, and foods...")
+            with open('seed.sql', 'r', encoding='utf-8') as f:
+                sql_script = f.read()
+            c.executescript(sql_script)
+            conn.commit()
+            print("Seeding complete.")
+        else:
+            print("Warning: seed.sql not found. Database initialized blank.")
+            
     conn.close()
 
-# Initialize DB at import time so it runs under 'flask run'
+# Initialize DB at import time
 init_db()
+
 
 
 

@@ -3,3 +3,4 @@ flask-session
 werkzeug
 matplotlib
 pandas
+scikit-learn
